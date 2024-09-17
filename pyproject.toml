@@ -17,6 +17,7 @@ slc = "exasol.pytest_slc"
 
 [tool.poetry.group.dev.dependencies]
 exasol-toolbox = "0.9.0"
+exasol-bucketfs = ">=0.12.0"
 
 [build-system]
 requires = ["poetry-core"]
