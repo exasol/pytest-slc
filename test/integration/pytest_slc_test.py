@@ -75,7 +75,9 @@ def test_deploy_slc_skipped(export_slc):
 
 def test_pytest_slc(pytester):
     pytester.makepyfile(_test_code)
-    result = pytester.runpytest(BACKEND_OPTION, BACKEND_ALL)
+    result = pytester.runpytest(
+        BACKEND_OPTION, BACKEND_ALL, "--project-short-tag", "PYSLC"
+    )
     assert result.ret == pytest.ExitCode.OK
     result.assert_outcomes(passed=2, skipped=0)
 
