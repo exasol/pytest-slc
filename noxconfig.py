@@ -5,5 +5,5 @@ from exasol.toolbox.config import BaseConfig
 PROJECT_CONFIG = BaseConfig(
     root_path=Path(__file__).parent,
     project_name="pytest_slc",
-    python_versions=("3.10", "3.11", "3.12", "3.13"),
+    python_versions=("3.10", "3.11", "3.12", "3.13", "3.14"),
 )
