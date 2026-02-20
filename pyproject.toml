@@ -1,7 +1,7 @@
 [project]
 name = "pytest-exasol-slc"
 version = "1.0.0"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10,<3.15"
 description = ""
 authors = [
     {name="Mikhail Beck", email="mikhail.beck@exasol.com"}
@@ -17,7 +17,7 @@ pytest = ">=7,<9"
 pytest-exasol-backend = ">=1.1, <2"
 pytest-exasol-extension = ">=0.2.4, <2"
 exasol-python-extension-common = ">=0.9.0, <1.0.0"
-exasol-saas-api = ">=2.3,<3"
+exasol-saas-api = ">=2.8,<3"
 
 [tool.poetry.plugins.pytest11]
 slc = "exasol.pytest_slc"
