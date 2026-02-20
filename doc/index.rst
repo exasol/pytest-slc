@@ -1,4 +1,4 @@
-Documentation of  pytest-slc
+Documentation of pytest-slc
 -----------------------------------
 
 .. grid:: 1 1 3 2
