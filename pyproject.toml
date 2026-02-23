@@ -1,7 +1,11 @@
 [project]
 name = "pytest-exasol-slc"
 version = "1.0.0"
-requires-python = ">=3.10,<3.15"
+# Restrict Python versions as difficulty with some unit tests related
+# to the ParallelTask implementation for Python 3.14.
+# This will be resolved in:
+#    https://github.com/exasol/pytest-slc/issues/4
+requires-python = ">=3.10,<3.14"
 description = ""
 authors = [
     {name="Mikhail Beck", email="mikhail.beck@exasol.com"}
