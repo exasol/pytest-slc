@@ -74,7 +74,7 @@ def export_slc_async(
 
     with export_runner() as export_task:
         # a "return" statement waits for export_runner().__exit__() while
-        # "yield" does not not.
+        # "yield" does not.
         #
         # In this case the SLC building takes quite long and this fixture
         # should not wait until the SLC building is completed.
