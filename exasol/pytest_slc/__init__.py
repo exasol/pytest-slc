@@ -163,9 +163,10 @@ def deploy_slc(
 
 
 @pytest.fixture(scope="session")
-def deployed_slc(deploy_slc, language_alias) -> None:
+def deployed_slc(deploy_slc, language_alias) -> str:
     """
-    The fixture calls deploy_slc() once, with the language_alis defined in the fixture
-    with the corresponded name.
+    Call `deploy_slc()` and return the language_alias defined by fixture
+    `language_alias`.
     """
     deploy_slc(language_alias)
+    return language_alias
