@@ -7,3 +7,4 @@
 ## Refactorings
 
 * #2 Fix CI workflows after move from pytest-plugins repository.
+* #4 Added support for Python 3.14
