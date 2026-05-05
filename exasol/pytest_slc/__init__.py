@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import getpass
+from importlib.metadata import version
 from pathlib import Path
 
 import exasol.bucketfs as bfs
@@ -20,6 +21,8 @@ from exasol_integration_test_docker_environment.lib.models.api_errors import (
     TaskFailures,
     TaskRuntimeError,
 )
+
+__version__ = version("pytest-exasol-slc")
 
 SKIP_SLC_OPTION = "--skip-slc"
 BFS_CONTAINER_DIRECTORY = "container"
