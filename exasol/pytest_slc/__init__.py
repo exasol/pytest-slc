@@ -21,6 +21,9 @@ from exasol_integration_test_docker_environment.lib.models.api_errors import (
     TaskRuntimeError,
 )
 
+from importlib.metadata import version
+__version__ = version("pytest-exasol-slc")
+
 SKIP_SLC_OPTION = "--skip-slc"
 BFS_CONTAINER_DIRECTORY = "container"
 
