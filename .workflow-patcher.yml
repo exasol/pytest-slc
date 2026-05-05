@@ -1,0 +1,19 @@
+workflows:
+  - name: slow-checks
+    step_customizations:
+      - action: REPLACE
+        job: run-integration-tests
+        step_id: run-integration-tests
+        content:
+          - name: Allow unprivileged user namespaces
+            id: allow-unprivileged-user-namespaces
+            run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+          - name: Run Integration Tests
+            id: run-integration-tests
+            run: poetry run -- nox -s test:integration -- --coverage --db-version ${{ matrix.exasol-version }}
+            env:
+              SAAS_HOST: ${{ secrets.INTEGRATION_TEAM_SAAS_STAGING_HOST }}
+              SAAS_ACCOUNT_ID: ${{ secrets.INTEGRATION_TEAM_SAAS_STAGING_ACCOUNT_ID }}
+              SAAS_PAT: ${{ secrets.INTEGRATION_TEAM_SAAS_STAGING_PAT }}
+              PYTEST_ADDOPTS: '${{ steps.pytest-markers.outputs.slow-tests }}'
