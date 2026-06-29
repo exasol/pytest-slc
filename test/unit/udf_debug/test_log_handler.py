@@ -21,7 +21,7 @@ def log_handler(host: str, port: int, data: str):
 
     handler = udf_debug.LogHandler()
     handler.rfile = io.StringIO(cleandoc(data))
-    handler.client_address=[host, port]
+    handler.client_address = [host, port]
     handler.server = Mock(output=Mock())
     return handler
 
@@ -32,7 +32,7 @@ def test_x2():
     while d := data.readline():
         s = d.decode("utf-8", "replace").rstrip("\r\n")
         print(s)
-    request = Mock(makefile = Mock(return_value=data))
+    request = Mock(makefile=Mock(return_value=data))
     server = Mock(output=Mock())
     handler = udf_debug.LogHandler(request, client_address=["host", 123], server=server)
     handler.server.output.put_nowait("")
@@ -40,13 +40,10 @@ def test_x2():
 
 
 def test_x3():
-    data = cleandoc(
-        """
+    data = cleandoc("""
         line one
         line two
-        """
-    )
+        """)
     handler = log_handler(host="host", port=123, data=data)
     handler.server.output.put_nowait("Hello")
     # monkeypatch.setattr(udf_debug.socketserver.StreamRequestHandler, "rfile", "hello")
-

@@ -15,7 +15,10 @@ from multiprocessing import (
     Queue,
 )
 from queue import Full
-from threading import Thread
+from threading import (
+    Event,
+    Thread,
+)
 from typing import (
     TextIO,
     TypeAlias,
@@ -97,8 +100,7 @@ def default_host() -> str:
         return "0.0.0.0"
 
 
-# I renamed argument "server" to "host"
-def output_service(queue: Queue, host: str | None, port: int | None):
+def _output_service(queue: Queue, host: str | None, port: int | None):
     """
     Start a standalone output service.
 
@@ -120,14 +122,15 @@ class Consumer(Thread):
     def __init__(self, queue: Queue, output: TextStream):
         super().__init__(target=self.print)
         self._queue = queue
-        self._continue = True
+        self._stop = Event()
         self._output = output
 
     def stop(self) -> None:
-        self._continue = False
+        self._stop.set()
+        queue.put("Cancel")  # Send message to cancel stdout_thread
 
     def print(self):
-        while self._continue:
+        while not self._stop.is_set():
             try:
                 message = self._queue.get()
                 self._output.write(f"UDF DEBUG {message}\n")
@@ -136,7 +139,6 @@ class Consumer(Thread):
         self._queue.close()
 
 
-# renamed arg "server" to "host"
 def start_udf_output_redirect_consumer(
     query: QueryExecutor,
     host: str | None,
@@ -156,21 +158,18 @@ def start_udf_output_redirect_consumer(
     port = 3000
 
     queue: Queue = Queue()
-    process = Process(target=output_service, args=(queue, host, port))
+    process = Process(target=_output_service, args=(queue, host, port))
     process.start()
 
     stdout_thread = Consumer(queue, output)
     stdout_thread.start()
     time.sleep(10)
     if process.is_alive():
-        query(f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{local_ip}:{port}';")
+        query(f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{host}:{port}';")
         return process, queue, stdout_thread
 
     # Failure
     stdout_thread.stop()
-    # Proposal: We could enhance method Consumer.stop() to send this final trigger
-    # automatically
-    queue.put("Cancel")  # Send message to cancel stdout_thread
     raise UdfDebugException("Could not start udf_debug.py")
     return None, None, None
 
@@ -191,8 +190,7 @@ class UdfDebugger:
         self.server = server
         self._process = None
         self._queue = None
-        # proposal: Add type hint `Consumer`
-        self._stdout_thread = None
+        self._stdout_thread: Consumer | None = None
 
     def __enter__(self):
         return self._activate()
@@ -216,7 +214,6 @@ class UdfDebugger:
             self._process.terminate()
             # Wait 1 second to give socket time to process all remaining messages.
             self._stdout_thread.stop()
-            self._queue.put("Completed")
 
         self._process = None
         self._queue = None
@@ -226,18 +223,3 @@ class UdfDebugger:
         Exit the debugger context explicitly.
         """
         return self.__exit__(type_, value, trace_back)
-
-
-# class UdfDebuggerFromDockerHost(UdfDebugger):
-#     """UdfDebugger configured with the Docker host IP."""
-#
-#     def __init__(
-#         # self, test_case: udf.TestCase, output: Optional[io.TextIOBase] = sys.stdout
-#         self, test_case: QueryExecutor, output: TextStream | None = sys.stdout
-#     ):
-#         env = docker_db_environment.DockerDBEnvironment("")
-#         super().__init__(
-#             test_case=test_case,
-#             server=env.get_ip_address_of_host(),
-#             output=output,
-#         )

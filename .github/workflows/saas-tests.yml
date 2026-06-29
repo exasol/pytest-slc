@@ -1,4 +1,4 @@
-name: SaaS-SLC
+name: SaaS Tests
 
 on:
   pull_request:
@@ -24,7 +24,7 @@ jobs:
         run: echo "SaaS SLC tests approved"
 
   run-saas-tests:
-    name: Run SaaS SLC Tests (Python-${{ matrix.minimum_python_version }})
+    name: Integration Tests (Python-${{ matrix.minimum_python_version }})
     needs:
       - build-matrix
       - approve-run-saas-tests

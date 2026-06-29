@@ -1,4 +1,4 @@
-name: Slow-Checks
+name: Slow Checks
 
 on:
   workflow_call:
@@ -13,7 +13,7 @@ jobs:
       contents: read
 
   run-integration-tests:
-    name: Run Integration Tests On Prem (Python-${{ matrix.python_versions }}, Exasol-${{ matrix.exasol_versions}})
+    name: Integration Tests On Prem (Python-${{ matrix.python_versions }}, Exasol-${{ matrix.exasol_versions}})
     needs:
       - build-matrix
     runs-on: "ubuntu-24.04"
