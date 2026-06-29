@@ -1,4 +1,4 @@
-name: SAAS-SLC
+name: SaaS-SLC
 
 on:
   pull_request:
@@ -9,22 +9,22 @@ jobs:
     name: Build Matrix
     uses: ./.github/workflows/matrix.yml
     with:
-      matrix_keys_json: '["python_versions"]'
+      matrix_keys_json: '["minimum_python_version"]'
     permissions:
       contents: read
 
   approve-run-saas-tests:
-    name: Approve Running SAAS SLC Tests?
+    name: Approve Running SaaS SLC Tests?
     runs-on: "ubuntu-24.04"
     permissions:
       contents: read
     environment: manual-approval
     steps:
       - name: Tests
-        run: echo "SAAS SLC tests approved"
+        run: echo "SaaS SLC tests approved"
 
   run-saas-tests:
-    name: Run SAAS SLC Tests (Python-${{ matrix.python_versions }})
+    name: Run SaaS SLC Tests (Python-${{ matrix.minimum_python_version }})
     needs:
       - build-matrix
       - approve-run-saas-tests
@@ -47,18 +47,17 @@ jobs:
         id: set-up-python-and-poetry-environment
         uses: exasol/python-toolbox/.github/actions/python-environment@v10
         with:
-          python-version: ${{ matrix.python_versions }}
+          python-version: ${{ matrix.minimum_python_version }}
           poetry-version: "2.3.0"
 
       - name: Allow unprivileged user namespaces
         id: allow-unprivileged-user-namespaces
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
-      - name: Run SAAS SLC Tests
+      - name: Run SaaS SLC Tests
         id: run-saas-tests
         run: >
           poetry run -- nox -s test:integration -- --coverage
-          --db-version "${MATRIX_EXASOL_VERSION}"
           -k test_pytest_slc_saas
         env:
           SAAS_HOST: ${{ secrets.INTEGRATION_TEAM_SAAS_STAGING_HOST }}
@@ -69,6 +68,6 @@ jobs:
         id: upload-artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: coverage-python${{ matrix.python_versions }}-saas-slc
+          name: coverage-python${{ matrix.minimum_python_version }}-saas-slc
           path: .coverage
           include-hidden-files: true
