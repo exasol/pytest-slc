@@ -150,17 +150,18 @@ def start_udf_output_redirect_consumer(
     process = Process(target=output_service, args=(queue, local_ip, port))
     process.start()
 
-    def print_stdout():
-        t = threading.current_thread()
-        while getattr(t, "keep_going", True):
-            try:
-                msg = queue.get()
-                output.write(f"UDF DEBUG {msg}\n")
-            except (OSError, ValueError):
-                traceback.print_exc()
-        queue.close()
-
+    # def print_stdout():
+    #     t = threading.current_thread()
+    #     while getattr(t, "keep_going", True):
+    #         try:
+    #             msg = queue.get()
+    #             output.write(f"UDF DEBUG {msg}\n")
+    #         except (OSError, ValueError):
+    #             traceback.print_exc()
+    #     queue.close()
+    #
     # stdout_thread = threading.Thread(target=print_stdout)
+
     stdout_thread = Consumer(queue, output)
     stdout_thread.start()
     time.sleep(10)
