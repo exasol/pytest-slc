@@ -14,6 +14,7 @@ pytest_plugins = ["pytester"]
 MAIN_LANGUAGE_ALIAS = "PYTHON3_PYTEST_SLC"
 ALT_LANGUAGE_ALIAS = "PYTHON3_PYTEST_SLC_ALT"
 
+# move into resource file
 _test_code = dedent(rf"""
 import pyexasol
 import pytest
@@ -69,6 +70,7 @@ def test_deploy_slc_skipped(export_slc):
 """)
 
 
+# split into 2 separate tests in separate files: ONPREM, SAAS
 def test_pytest_slc(pytester):
     pytester.makepyfile(_test_code)
     result = pytester.runpytest(
@@ -78,6 +80,7 @@ def test_pytest_slc(pytester):
     result.assert_outcomes(passed=2, skipped=0)
 
 
+# move to separate file
 def test_pytest_slc_skip(pytester):
     pytester.makepyfile(_test_code_skip)
     result = pytester.runpytest(BACKEND_OPTION, BACKEND_ONPREM, SKIP_SLC_OPTION)

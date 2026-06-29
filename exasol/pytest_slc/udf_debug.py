@@ -3,6 +3,7 @@ Support for capturing the output of UDFs.
 """
 
 import io
+import logging
 import socket
 import socketserver
 import sys
@@ -24,6 +25,15 @@ TextStream: TypeAlias = TextIO | io.TextIOBase
 QueryExecutor: TypeAlias = Callable[[str], None]
 
 
+LOG = logging.getLogger(__name__)
+
+
+class UdfDebugException(Exception):
+    """
+    Raised in case the UDF Debug server could not be started.
+    """
+
+
 class LogHandler(socketserver.StreamRequestHandler):
     """
     Read output lines from the UDF log socket.
@@ -42,8 +52,7 @@ class LogHandler(socketserver.StreamRequestHandler):
                 try:
                     self.server.output.put_nowait(message)
                 except Full as full_ex:
-                    # Should that be log.error() ?
-                    print(f"Queue is full for UDF debug:{full_ex}", file=sys.stderr)
+                    LOG.error(f"UDF debugging queue is full: {full_ex}")
                 buffer = []
 
 
@@ -127,40 +136,28 @@ class Consumer(Thread):
         self._queue.close()
 
 
+# renamed arg "server" to "host"
 def start_udf_output_redirect_consumer(
     query: QueryExecutor,
-    server: str | None,
+    host: str | None,
     output: io.TextIOBase,
-    # test_case: udf.TestCase, server: Optional[str], output: io.TextIOBase
 ):
     """
     Start the output forwarding process and its consumer thread.
     """
 
-    if server is None:
+    def local_ip() -> str:
         hostname = socket.gethostname()
-        local_ip = socket.gethostbyname(hostname)
-    else:
-        local_ip = server
-    print("local_ip", local_ip)  # should this be log.debug() ?
+        return socket.gethostbyname(hostname)
+
+    host = local_ip() if host is None else host
+    LOG.info("Sending UDF output to: %s", host)
 
     port = 3000
 
     queue: Queue = Queue()
-    process = Process(target=output_service, args=(queue, local_ip, port))
+    process = Process(target=output_service, args=(queue, host, port))
     process.start()
-
-    # def print_stdout():
-    #     t = threading.current_thread()
-    #     while getattr(t, "keep_going", True):
-    #         try:
-    #             msg = queue.get()
-    #             output.write(f"UDF DEBUG {msg}\n")
-    #         except (OSError, ValueError):
-    #             traceback.print_exc()
-    #     queue.close()
-    #
-    # stdout_thread = threading.Thread(target=print_stdout)
 
     stdout_thread = Consumer(queue, output)
     stdout_thread.start()
@@ -168,10 +165,13 @@ def start_udf_output_redirect_consumer(
     if process.is_alive():
         query(f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{local_ip}:{port}';")
         return process, queue, stdout_thread
-    # stdout_thread.keep_going = False
+
+    # Failure
     stdout_thread.stop()
+    # Proposal: We could enhance method Consumer.stop() to send this final trigger
+    # automatically
     queue.put("Cancel")  # Send message to cancel stdout_thread
-    # raise exception test_case.fail("Could not start udf_debug.py")
+    raise UdfDebugException("Could not start udf_debug.py")
     return None, None, None
 
 
@@ -183,7 +183,6 @@ class UdfDebugger:
     def __init__(
         self,
         query: QueryExecutor,
-        # test_case: udf.TestCase,
         server: str | None = None,
         output: TextStream | None = sys.stdout,
     ):
@@ -192,6 +191,7 @@ class UdfDebugger:
         self.server = server
         self._process = None
         self._queue = None
+        # proposal: Add type hint `Consumer`
         self._stdout_thread = None
 
     def __enter__(self):
@@ -206,7 +206,7 @@ class UdfDebugger:
     def _activate(self):
         self._process, self._queue, self._stdout_thread = (
             start_udf_output_redirect_consumer(
-                query=self.query, server=self.server, output=self.output
+                query=self.query, host=self.server, output=self.output
             )
         )
         return self
@@ -215,8 +215,6 @@ class UdfDebugger:
         if self._process is not None:
             self._process.terminate()
             # Wait 1 second to give socket time to process all remaining messages.
-            #
-            # self._stdout_thread.keep_going = False
             self._stdout_thread.stop()
             self._queue.put("Completed")
 
