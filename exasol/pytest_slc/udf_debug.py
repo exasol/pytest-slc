@@ -6,9 +6,9 @@ import io
 import socket
 import socketserver
 import sys
-import threading
 import time
 import traceback
+from collections.abc import Callable
 from multiprocessing import (
     Process,
     Queue,
@@ -16,11 +16,9 @@ from multiprocessing import (
 from queue import Full
 from threading import Thread
 from typing import (
-    Callable,
     TextIO,
     TypeAlias,
 )
-
 
 TextStream: TypeAlias = TextIO | io.TextIOBase
 QueryExecutor: TypeAlias = Callable[[str], None]
@@ -130,7 +128,9 @@ class Consumer(Thread):
 
 
 def start_udf_output_redirect_consumer(
-    query: QueryExecutor, server: str | None, output: io.TextIOBase
+    query: QueryExecutor,
+    server: str | None,
+    output: io.TextIOBase,
     # test_case: udf.TestCase, server: Optional[str], output: io.TextIOBase
 ):
     """
@@ -142,7 +142,7 @@ def start_udf_output_redirect_consumer(
         local_ip = socket.gethostbyname(hostname)
     else:
         local_ip = server
-    print("local_ip", local_ip) # should this be log.debug() ?
+    print("local_ip", local_ip)  # should this be log.debug() ?
 
     port = 3000
 
