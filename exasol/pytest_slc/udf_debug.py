@@ -90,10 +90,8 @@ def default_host() -> str:
         return "0.0.0.0"
 
 
-# Is some renaming acceptable, here?
-# - rename argument "server" to "host"
-# - rename the function to start_output_service()
-def output_service(queue: Queue, server: str | None, port: int | None):
+# I renamed argument "server" to "host"
+def output_service(queue: Queue, host: str | None, port: int | None):
     """
     Start a standalone output service.
 
@@ -101,7 +99,7 @@ def output_service(queue: Queue, server: str | None, port: int | None):
     instances the connection parameter externalClient need to be specified.
     """
 
-    host = default_host() if server is None else server
+    host = default_host() if host is None else host
     port = 3000 if port is None else port
     thread = ScriptOutputThread(server_address=(host, port), output=queue)
     queue.put_nowait(f">>> bind the output to {host}:{port}")
