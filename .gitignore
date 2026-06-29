@@ -164,3 +164,7 @@ cython_debug/
 
 # Emacs
 TAGS
+
+# Codex
+/.serena
+/.codex

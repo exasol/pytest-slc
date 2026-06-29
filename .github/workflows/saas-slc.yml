@@ -1,21 +1,33 @@
-name: Slow-Checks
+name: SAAS-SLC
 
 on:
-  workflow_call:
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   build-matrix:
     name: Build Matrix
     uses: ./.github/workflows/matrix.yml
     with:
-      matrix_keys_json: '["python_versions", "exasol_versions"]'
+      matrix_keys_json: '["python_versions"]'
     permissions:
       contents: read
 
-  run-integration-tests:
-    name: Run Integration Tests On Prem (Python-${{ matrix.python_versions }}, Exasol-${{ matrix.exasol_versions}})
+  approve-run-saas-tests:
+    name: Approve Running SAAS SLC Tests?
+    runs-on: "ubuntu-24.04"
+    permissions:
+      contents: read
+    environment: manual-approval
+    steps:
+      - name: Tests
+        run: echo "SAAS SLC tests approved"
+
+  run-saas-tests:
+    name: Run SAAS SLC Tests (Python-${{ matrix.python_versions }})
     needs:
       - build-matrix
+      - approve-run-saas-tests
     runs-on: "ubuntu-24.04"
     permissions:
       contents: read
@@ -42,19 +54,21 @@ jobs:
         id: allow-unprivileged-user-namespaces
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
-      - name: Run Integration Tests
-        id: run-integration-tests
+      - name: Run SAAS SLC Tests
+        id: run-saas-tests
         run: >
           poetry run -- nox -s test:integration -- --coverage
           --db-version "${MATRIX_EXASOL_VERSION}"
-          -k "test_pytest_slc_onprem or test_pytest_slc_skip"
+          -k test_pytest_slc_saas
         env:
-          MATRIX_EXASOL_VERSION: ${{ matrix.exasol_versions }}
+          SAAS_HOST: ${{ secrets.INTEGRATION_TEAM_SAAS_STAGING_HOST }}
+          SAAS_ACCOUNT_ID: ${{ secrets.INTEGRATION_TEAM_SAAS_STAGING_ACCOUNT_ID }}
+          SAAS_PAT: ${{ secrets.INTEGRATION_TEAM_SAAS_STAGING_PAT }}
 
       - name: Upload Artifacts
         id: upload-artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: coverage-python${{ matrix.python_versions }}-exasol${{ matrix.exasol_versions }}-slow
+          name: coverage-python${{ matrix.python_versions }}-saas-slc
           path: .coverage
           include-hidden-files: true
