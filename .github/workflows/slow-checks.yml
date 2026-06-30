@@ -12,6 +12,10 @@ jobs:
     permissions:
       contents: read
 
+  # wf 1: pytester itests
+  # wf 2: other itests
+
+  # move to ....
   run-integration-tests:
     name: Integration Tests On Prem (Python-${{ matrix.python_versions }}, Exasol-${{ matrix.exasol_versions}})
     needs:

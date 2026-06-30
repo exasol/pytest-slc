@@ -4,30 +4,34 @@ Support for capturing the output of UDFs.
 
 import io
 import logging
+import queue
 import socket
 import socketserver
 import sys
+import threading
 import time
 import traceback
 from collections.abc import Callable
+import multiprocessing
 from multiprocessing import (
     Process,
     Queue,
 )
-from queue import Full
-from threading import (
-    Event,
-    Thread,
-)
+from threading import Thread
 from typing import (
     TextIO,
     TypeAlias,
 )
 
+import pyexasol
+
 TextStream: TypeAlias = TextIO | io.TextIOBase
-QueryExecutor: TypeAlias = Callable[[str], None]
+QueryExecutor: TypeAlias = Callable[[str], pyexasol.ExaStatement]
 
-
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
 LOG = logging.getLogger(__name__)
 
 
@@ -43,10 +47,12 @@ class LogHandler(socketserver.StreamRequestHandler):
     """
 
     def handle(self):
+        LOG.debug("LogHandler.handle()")
         address = f"{self.client_address[0]}:{self.client_address[1]}"
         buffer = []
         while True:
             data = self.rfile.readline()
+            LOG.debug(f'handle(): data = {data}')
             if not data:
                 break
             buffer.append(data.decode("utf-8", "replace").rstrip("\r\n"))
@@ -54,8 +60,8 @@ class LogHandler(socketserver.StreamRequestHandler):
                 message = f"{address}> {''.join(buffer).rstrip()}\n"
                 try:
                     self.server.output.put_nowait(message)
-                except Full as full_ex:
-                    LOG.error(f"UDF debugging queue is full: {full_ex}")
+                except queue.Full as ex:
+                    LOG.error(f"UDF debugging queue is full: {ex}")
                 buffer = []
 
 
@@ -68,29 +74,32 @@ class LogServer(socketserver.ThreadingTCPServer):
     daemon_threads = True
 
     def __init__(self, server_address: tuple[str, int], output: Queue):
-        output.put_nowait(f"Server address:{server_address}\n")
+        output.put_nowait(f"Server address: {server_address}\n")
         self.output = output
+        LOG.debug("initializing ThreadingTCPServer with LogHandler")
         super().__init__(server_address, LogHandler)
 
 
-class ScriptOutputThread(Thread):
-    """
-    Serve UDF output in a background thread.
-    """
-
-    def __init__(self, server_address: tuple[str, int], output: Queue):
-        super().__init__()
-        self.server_address = server_address
-        self.server = LogServer(server_address, output)
-        self.finished = False
-
-    def run(self):
-        try:
-            self.server.serve_forever(poll_interval=1)
-        finally:
-            self.server.shutdown()
-            self.server.server_close()
-            del self.server
+# class ScriptOutputThread(Thread):
+#     """
+#     Serve UDF output in a background thread.
+#     """
+#
+#     def __init__(self, server_address: tuple[str, int], output: Queue):
+#         super().__init__()
+#         self.server_address = server_address
+#         LOG.debug("ScriptOutputThread.__init__()")
+#         # self.finished = False
+#
+#     def run(self):
+#         server = LogServer(self.server_address, output)
+#         try:
+#             LOG.debug("server.serve_forever()")
+#             server.serve_forever(poll_interval=1)
+#         finally:
+#             server.shutdown()
+#             server.server_close()
+#             del server
 
 
 def default_host() -> str:
@@ -100,7 +109,12 @@ def default_host() -> str:
         return "0.0.0.0"
 
 
-def _output_service(queue: Queue, host: str | None, port: int | None):
+def _output_service(
+    queue: Queue,
+    host: str | None,
+    port: int | None,
+    server_ready: multiprocessing.Event,
+):
     """
     Start a standalone output service.
 
@@ -110,30 +124,45 @@ def _output_service(queue: Queue, host: str | None, port: int | None):
 
     host = default_host() if host is None else host
     port = 3000 if port is None else port
-    thread = ScriptOutputThread(server_address=(host, port), output=queue)
+    # thread = ScriptOutputThread(server_address=(host, port), output=queue)
     queue.put_nowait(f">>> bind the output to {host}:{port}")
+
+    server = LogServer(server_address=(host, port), output=queue)
+    server_ready.set()
     try:
-        thread.run()
-    except KeyboardInterrupt:
+        LOG.debug("server.serve_forever()")
+        server.serve_forever(poll_interval=1)
+        LOG.debug("After server.serve_forever()")
+    finally:
+        LOG.debug("_output_service(): finally ")
         sys.stdout.flush()
+        server.shutdown()
+        server.server_close()
+        del server
+    LOG.debug("End of _output_service()")
 
 
 class Consumer(Thread):
     def __init__(self, queue: Queue, output: TextStream):
-        super().__init__(target=self.print)
+        LOG.debug("Consumer.__init__()")
+        super().__init__()
         self._queue = queue
-        self._stop = Event()
+        self._stop = threading.Event()
         self._output = output
 
     def stop(self) -> None:
         self._stop.set()
-        queue.put("Cancel")  # Send message to cancel stdout_thread
+        self._queue.put("Cancel")  # Send message to cancel thread
 
-    def print(self):
+    def run(self):
         while not self._stop.is_set():
             try:
                 message = self._queue.get()
-                self._output.write(f"UDF DEBUG {message}\n")
+                print("sample message Consumer after queue.get()", file=self._output)
+                LOG.debug(f"Consumer: message = {message}")
+                # try to keep messages identical
+                self._output.write(f"UDF Debug {message}\n")
+                self._output.flush()
             except (OSError, ValueError):
                 traceback.print_exc()
         self._queue.close()
@@ -153,22 +182,28 @@ def start_udf_output_redirect_consumer(
         return socket.gethostbyname(hostname)
 
     host = local_ip() if host is None else host
-    LOG.info("Sending UDF output to: %s", host)
-
     port = 3000
+    LOG.info("Sending UDF output to: %s:%d", host, port)
 
     queue: Queue = Queue()
-    process = Process(target=_output_service, args=(queue, host, port))
+    # event
+    # to enable process to signal being ready
+    server_ready = multiprocessing.Event()
+    process = Process(target=_output_service, args=(queue, host, port, server_ready))
     process.start()
 
     stdout_thread = Consumer(queue, output)
     stdout_thread.start()
-    time.sleep(10)
-    if process.is_alive():
-        query(f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{host}:{port}';")
-        return process, queue, stdout_thread
 
-    # Failure
+    if not server_ready.wait(30):
+        raise Exception("timeout")
+
+    # Create socket writer client simulating the database and a UDF
+    # running inside.
+    query(f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{host}:{port}'")
+    return process, queue, stdout_thread
+
+    # Failure: time out required
     stdout_thread.stop()
     raise UdfDebugException("Could not start udf_debug.py")
     return None, None, None
@@ -183,9 +218,10 @@ class UdfDebugger:
         self,
         query: QueryExecutor,
         server: str | None = None,
-        output: TextStream | None = sys.stdout,
+        output: TextStream | None = None,
+        # output: TextStream | None = sys.stdout,
     ):
-        self.output = output
+        self.output = output or sys.stdout
         self.query = query
         self.server = server
         self._process = None
