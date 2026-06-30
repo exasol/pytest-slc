@@ -4,7 +4,10 @@ Support for capturing the output of UDFs.
 
 import io
 import logging
+import multiprocessing
+import os
 import queue
+import signal
 import socket
 import socketserver
 import sys
@@ -12,7 +15,6 @@ import threading
 import time
 import traceback
 from collections.abc import Callable
-import multiprocessing
 from multiprocessing import (
     Process,
     Queue,
@@ -247,7 +249,8 @@ class UdfDebugger:
 
     def __exit__(self, type_, value, trace_back):
         if self._process is not None:
-            self._process.terminate()
+            # self._process.terminate()
+            os.kill(self._process.pid, signal.SIGINT)
             # Wait 1 second to give socket time to process all remaining messages.
             self._stdout_thread.stop()
 

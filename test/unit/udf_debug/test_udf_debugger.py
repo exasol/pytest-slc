@@ -92,7 +92,7 @@ def test_x1(client_address) -> None:
         send(ip, "message three\n")
 
     line = output.getvalue()
-    print(f'{line}')
+    print(f'output.getvalue(): {line}')
     return
     expected = 3
     result = []
