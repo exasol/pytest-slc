@@ -6,7 +6,10 @@ from datetime import timedelta
 import pytest
 import tenacity
 
-from exasol.pytest_slc.udf_debug.messages import wait_for_messages
+from exasol.pytest_slc.udf_debug.messages import (
+    UnsupportedLocationType,
+    wait_for_messages,
+)
 
 LOG = logging.getLogger(__name__)
 LINES = ["line 1", "line 2"]
@@ -48,3 +51,9 @@ def test_success(tmp_path, location_type):
 
     with not_raises(tenacity.RetryError):
         wait_for_messages(location, *LINES, **TIMING)
+
+
+def test_unsupported_location_type():
+    illegal_location = ["list"]
+    with pytest.raises(UnsupportedLocationType):
+        wait_for_messages(illegal_location)
