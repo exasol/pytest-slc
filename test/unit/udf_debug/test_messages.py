@@ -2,29 +2,18 @@ import contextlib
 import io
 import logging
 from datetime import timedelta
-from pathlib import Path
 
 import pytest
 import tenacity
 
-LOG = logging.getLogger(__name__)
-
 from exasol.pytest_slc.udf_debug.messages import wait_for_messages
 
-
-def test_x1() -> None:
-    data = io.StringIO("line 1\nline 2\n")
-    data = Path("~/tmp/c").expanduser()
-    wait_for_messages(data, "line 1", "line 3")
-
-
+LOG = logging.getLogger(__name__)
+LINES = ["line 1", "line 2"]
 TIMING = {
     "interval": timedelta(seconds=0.01),
     "timeout": timedelta(seconds=0.02),
 }
-
-
-LINES = ["line 1", "line 2"]
 
 
 @pytest.mark.parametrize("location_type", ["file", "buffer"])

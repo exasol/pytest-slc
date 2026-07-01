@@ -3,6 +3,7 @@ import io
 import logging
 from datetime import timedelta
 from pathlib import Path
+from typing import cast
 
 from tenacity import Retrying
 from tenacity.stop import stop_after_delay
@@ -47,9 +48,9 @@ def wait_for_messages(
     with contextlib.ExitStack() as stack:
         if isinstance(location, Path):
             with location.open("r") as stream:
-                wait(location, stream)
+                wait(str(location), stream)
         elif isinstance(location, io.StringIO):
-            stream = io.StringIO(location.getvalue())
+            stream = cast(io.TextIOWrapper, io.StringIO(location.getvalue()))
             wait("StringIO buffer", stream)
         else:
             raise Exception(f"Unsupported location type {type(location)}.")
