@@ -1,4 +1,4 @@
-from test.unit.udf_debug.ip_address import IpAddress
+from exasol.pytest_slc.udf_debug.ip_address import IpAddress
 
 import pytest
 

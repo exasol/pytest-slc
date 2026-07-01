@@ -4,7 +4,7 @@ Support for capturing the output of UDFs.
 
 import io
 import logging
-import multiprocessing
+import multiprocessing as mp
 import os
 import queue
 import signal
@@ -26,6 +26,8 @@ from typing import (
 )
 
 import pyexasol
+
+from exasol.pytest_slc.udf_debug.ip_address import IpAddress
 
 TextStream: TypeAlias = TextIO | io.TextIOBase
 QueryExecutor: TypeAlias = Callable[[str], pyexasol.ExaStatement]
@@ -74,12 +76,44 @@ class LogServer(socketserver.ThreadingTCPServer):
 
     allow_reuse_address = True
     daemon_threads = True
+    block_on_close = False
 
-    def __init__(self, server_address: tuple[str, int], output: Queue):
+    def __init__(self, server_address: IpAddress, output: Queue):
         output.put_nowait(f"Server address: {server_address}\n")
         self.output = output
         LOG.debug("initializing ThreadingTCPServer with LogHandler")
-        super().__init__(server_address, LogHandler)
+        super().__init__(server_address.as_tuple, LogHandler)
+
+
+class ServerThread(Thread):
+    def __init__(self):
+        super().__init__()
+
+    def run(self):
+        pass
+
+
+class LogServerProcess(Process):
+    def __init__(
+        self,
+        queue: Queue,
+        server: IpAddress,
+        server_ready: mp.Event,
+        shutdown_server : mp.Event,
+    ):
+        self.queue = queue
+        self.server = server
+        self.server_ready = server_ready
+        self.shutdown_server = shutdown_server
+        super().__init__()
+
+    def run(self):
+        _output_service(
+            self.queue,
+            self.server,
+            self.server_ready,
+            self.shutdown_server,
+        )
 
 
 # class ScriptOutputThread(Thread):
@@ -104,18 +138,20 @@ class LogServer(socketserver.ThreadingTCPServer):
 #             del server
 
 
-def default_host() -> str:
-    try:
-        return socket.gethostbyname(socket.gethostname())
-    except OSError:
-        return "0.0.0.0"
+# def default_host() -> str:
+#     try:
+#         return socket.gethostbyname(socket.gethostname())
+#     except OSError:
+#         return "0.0.0.0"
 
 
 def _output_service(
     queue: Queue,
-    host: str | None,
-    port: int | None,
-    server_ready: multiprocessing.Event,
+    server_address: IpAddress,
+    # host: str | None,
+    # port: int | None,
+    server_ready: mp.Event,
+    shutdown_server: mp.Event,
 ):
     """
     Start a standalone output service.
@@ -124,24 +160,33 @@ def _output_service(
     instances the connection parameter externalClient need to be specified.
     """
 
-    host = default_host() if host is None else host
-    port = 3000 if port is None else port
-    # thread = ScriptOutputThread(server_address=(host, port), output=queue)
-    queue.put_nowait(f">>> bind the output to {host}:{port}")
+    # handling of default host has been removed.
+    # Function now requires a valid server_address to be passed.
+    queue.put_nowait(f">>> bind the output to {server_address}")
 
-    server = LogServer(server_address=(host, port), output=queue)
+    # server = LogServer(server_address=(host, port), output=queue)
+    server = LogServer(server_address=server_address, output=queue)
     server_ready.set()
     try:
-        LOG.debug("server.serve_forever()")
-        server.serve_forever(poll_interval=1)
+        LOG.debug("_output_service: server.serve_forever()")
+        t = Thread(target=server.serve_forever, kwargs={"poll_interval": 1})
+        t.start()
+        LOG.debug("_output_service: after start")
+
+        shutdown_server.wait()
+        LOG.debug(f"_output_service: shutting down the server")
+        server.shutdown()
+
+        t.join()
+        # server.serve_forever(poll_interval=1)
         LOG.debug("After server.serve_forever()")
     finally:
         LOG.debug("_output_service(): finally ")
         sys.stdout.flush()
-        server.shutdown()
+        # server.shutdown()
         server.server_close()
         del server
-    LOG.debug("End of _output_service()")
+    LOG.debug("_output_service: End of _output_service()")
 
 
 class Consumer(Thread):
@@ -160,7 +205,6 @@ class Consumer(Thread):
         while not self._stop.is_set():
             try:
                 message = self._queue.get()
-                print("sample message Consumer after queue.get()", file=self._output)
                 LOG.debug(f"Consumer: message = {message}")
                 # try to keep messages identical
                 self._output.write(f"UDF Debug {message}\n")
@@ -183,15 +227,22 @@ def start_udf_output_redirect_consumer(
         hostname = socket.gethostname()
         return socket.gethostbyname(hostname)
 
-    host = local_ip() if host is None else host
-    port = 3000
-    LOG.info("Sending UDF output to: %s:%d", host, port)
+    server = IpAddress.create(host, 3000)
+    # host = local_ip() if host is None else host
+    # port = 3000
+    LOG.info("Sending UDF output to: %s", server)
 
     queue: Queue = Queue()
-    # event
-    # to enable process to signal being ready
-    server_ready = multiprocessing.Event()
-    process = Process(target=_output_service, args=(queue, host, port, server_ready))
+    # events to enable process to signal being ready and
+    # caller to request server shutdown
+    server_ready = mp.Event()
+    shutdown_server = mp.Event()
+    process = LogServerProcess(
+        queue,
+        server,
+        server_ready,
+        shutdown_server,
+    )
     process.start()
 
     stdout_thread = Consumer(queue, output)
@@ -202,8 +253,8 @@ def start_udf_output_redirect_consumer(
 
     # Create socket writer client simulating the database and a UDF
     # running inside.
-    query(f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{host}:{port}'")
-    return process, queue, stdout_thread
+    query(f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{server}'")
+    return process, queue, stdout_thread, shutdown_server
 
     # Failure: time out required
     stdout_thread.stop()
@@ -229,6 +280,7 @@ class UdfDebugger:
         self._process = None
         self._queue = None
         self._stdout_thread: Consumer | None = None
+        self._shutdown_server = None
 
     def __enter__(self):
         return self._activate()
@@ -240,7 +292,7 @@ class UdfDebugger:
         return self._activate()
 
     def _activate(self):
-        self._process, self._queue, self._stdout_thread = (
+        self._process, self._queue, self._stdout_thread, self._shutdown_server = (
             start_udf_output_redirect_consumer(
                 query=self.query, host=self.server, output=self.output
             )
@@ -250,7 +302,8 @@ class UdfDebugger:
     def __exit__(self, type_, value, trace_back):
         if self._process is not None:
             # self._process.terminate()
-            os.kill(self._process.pid, signal.SIGINT)
+            # os.kill(self._process.pid, signal.SIGINT)
+            self._shutdown_server.set()
             # Wait 1 second to give socket time to process all remaining messages.
             self._stdout_thread.stop()
 

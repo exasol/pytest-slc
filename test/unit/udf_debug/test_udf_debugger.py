@@ -3,13 +3,13 @@ import io
 import re
 import socket
 from queue import Queue
-from test.unit.udf_debug.ip_address import IpAddress
+from exasol.pytest_slc.udf_debug.ip_address import IpAddress
 from unittest.mock import Mock
 
 import pyexasol
 import pytest
 
-from exasol.pytest_slc import udf_debug
+from exasol.pytest_slc.udf_debug import udf_debug
 
 
 @pytest.mark.skip
@@ -84,12 +84,19 @@ def test_x1(client_address) -> None:
 
     # result = query_executor(f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{client_address}'")
     output = io.StringIO()
+    # sys.stdout
+    # open("a.txt", "w")
     with udf_debug.UdfDebugger(query_executor, output=output):
-    # with udf_debug.UdfDebugger(query_executor, "127.0.0.1"):
         udf_debug.LOG.debug(f'sending to {ip}')
         send(ip, "message one\n")
         send(ip, "message two\n")
         send(ip, "message three\n")
+
+        # wait_for_message(output, ...)
+        # wait_for_message(buffer=output, ...)
+        # wait_for_message(file=Path("a.txt"), ...)
+        while not all(f"message {n}" in output.getvalue()):
+            pass
 
     line = output.getvalue()
     print(f'output.getvalue(): {line}')

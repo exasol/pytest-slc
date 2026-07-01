@@ -5,13 +5,13 @@ import re
 from dataclasses import dataclass
 from inspect import cleandoc
 from queue import Queue
-from test.unit.udf_debug.ip_address import IpAddress
 from unittest.mock import (
     Mock,
     call,
 )
 
-from exasol.pytest_slc import udf_debug
+import exasol.pytest_slc.udf_debug as impl
+from exasol.pytest_slc.udf_debug.ip_address import IpAddress
 
 
 def log_handler(data: str, client_address: IpAddress, server: Mock = Mock()):
@@ -22,7 +22,7 @@ def log_handler(data: str, client_address: IpAddress, server: Mock = Mock()):
 
     stream = io.BytesIO("\r\n".join(data).encode("utf-8"))
     request = Mock(makefile=Mock(return_value=stream))
-    return udf_debug.LogHandler(
+    return impl.LogHandler(
         request,
         client_address=client_address.as_tuple,
         server=server,
