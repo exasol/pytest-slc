@@ -62,7 +62,7 @@ def wait_for_messages(
             stop=stop_after_delay(timeout),
             wait=wait_fixed(interval),
         )
-        expected = {m: False for m in messages}
+        expected = dict.fromkeys(messages, False)
         _wait_with_retry(source, stream, expected, retrying)
 
     if isinstance(location, Path):
