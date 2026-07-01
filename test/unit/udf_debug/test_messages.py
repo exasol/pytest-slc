@@ -1,10 +1,8 @@
 import contextlib
 import io
 import logging
-import tempfile
 from datetime import timedelta
 from pathlib import Path
-from typing import Callable
 
 import pytest
 import tenacity

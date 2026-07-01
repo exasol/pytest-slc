@@ -26,16 +26,15 @@ def wait_for_expected_messages(
                 expected.pop(line, None)
             if expected:
                 raise TimeoutError(
-                    f"{source} did not contain"
-                    f" expected messages {list(expected)}."
+                    f"{source} did not contain" f" expected messages {list(expected)}."
                 )
 
 
 def wait_for_messages(
     location: io.TextIOBase | Path,
     *messages: str,
-    timeout: timedelta=timedelta(seconds=2),
-    interval: timedelta=timedelta(seconds=1),
+    timeout: timedelta = timedelta(seconds=2),
+    interval: timedelta = timedelta(seconds=1),
 ):
     def wait(source: str, stream: io.TextIOBase):
         retrying = Retrying(
