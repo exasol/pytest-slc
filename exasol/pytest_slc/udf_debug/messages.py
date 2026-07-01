@@ -12,6 +12,10 @@ from tenacity.wait import wait_fixed
 LOG = logging.getLogger(__name__)
 
 
+class UnsupportedLocationType(Exception):
+    pass
+
+
 def wait_for_expected_messages(
     source: str | Path,
     stream: io.TextIOBase,
@@ -27,7 +31,7 @@ def wait_for_expected_messages(
                 expected.pop(line, None)
             if expected:
                 raise TimeoutError(
-                    f"{source} did not contain" f" expected messages {list(expected)}."
+                    f"{source} did not contain expected messages {list(expected)}."
                 )
 
 
@@ -45,12 +49,11 @@ def wait_for_messages(
         expected = {m: False for m in messages}
         wait_for_expected_messages(source, stream, expected, retrying)
 
-    with contextlib.ExitStack() as stack:
-        if isinstance(location, Path):
-            with location.open("r") as stream:
-                wait(str(location), stream)
-        elif isinstance(location, io.StringIO):
-            stream = cast(io.TextIOWrapper, io.StringIO(location.getvalue()))
-            wait("StringIO buffer", stream)
-        else:
-            raise Exception(f"Unsupported location type {type(location)}.")
+    if isinstance(location, Path):
+        with location.open("r") as stream:
+            wait(str(location), stream)
+    elif isinstance(location, io.StringIO):
+        stream = cast(io.TextIOWrapper, io.StringIO(location.getvalue()))
+        wait("StringIO buffer", stream)
+    else:
+        raise UnsupportedLocationType(f"{type(location)}")
