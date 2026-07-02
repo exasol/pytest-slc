@@ -1,5 +1,7 @@
+import contextlib
 import io
 import logging
+from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
 from typing import cast
@@ -15,61 +17,55 @@ class UnsupportedLocationType(Exception):
     pass
 
 
-def _wait_with_retry(
-    source: str | Path,
-    stream: io.TextIOBase,
-    expected: dict[str, bool],
-    retrying: Retrying,
-) -> None:
+@dataclass
+class Accessor:
+    label: str
+    stream: io.TextIOBase | io.StringIO
+
+
+@contextlib.contextmanager
+def access(location: io.StringIO | Path) -> Accessor:
+    if isinstance(location, io.StringIO):
+        yield Accessor("String Buffer", io.StringIO(location.getvalue()))
+    elif isinstance(location, Path):
+        with location.open("r") as stream:
+            yield Accessor(str(location), stream)
+    else:
+        raise UnsupportedLocationType(f"{type(location)}")
+
+
+
+def _wait_with_retry(location: Path | io.StringIO, messages: list[str]) -> None:
     """
-    Search ``stream`` for the expected lines using the specified
-    tenacity.Retrying options.
+    Search ``location`` for lines containing the expected messages using
+    the specified tenacity.Retrying options.
     """
 
-    for attempt in retrying:
-        with attempt:
-            stream.seek(0)
-            LOG.debug(f"Searching lines {list(expected)}")
-            while line := stream.readline():
-                line = line.strip()
-                expected.pop(line, None)
-            if expected:
-                raise TimeoutError(
-                    f"{source} did not contain expected lines {list(expected)}."
-                )
+def _remaining(line: str, messages: list[str]) -> list[str]:
+    # Return the messages not contained in the current line.
+    return [m for m in messages if m not in line]
+
+    with access(location) as accessor:
+        LOG.debug(f"Searching lines {list(messages)}")
+        while line := accessor.stream.readline():
+            line = line.strip()
+            messages = _remaining(line, messages)
+        if messages:
+            raise TimeoutError(
+                f"{accessor.label} did not contain expected messages {list(messages)}."
+            )
 
 
 def wait_for_messages(
-    location: io.TextIOBase | Path,
+    location: io.StringIO | Path,
     *messages: str,
     timeout: timedelta = timedelta(seconds=2),
     interval: timedelta = timedelta(seconds=1),
 ) -> None:
-    """
-    Search (repeatedly) in the specified location for all of the specified
-    messages.
-
-    Args:
-        location: Instance of io.TextIOBase or pathlib.Path.
-
-    Raise:
-        TimeoutError: if one or multiple of the messages could not be found
-                      after the specified timeout.
-    """
-
-    def wait(source: str, stream: io.TextIOBase):
-        retrying = Retrying(
+    retrying = Retrying(
             stop=stop_after_delay(timeout),
             wait=wait_fixed(interval),
         )
-        expected = dict.fromkeys(messages, False)
-        _wait_with_retry(source, stream, expected, retrying)
-
-    if isinstance(location, Path):
-        with location.open("r") as stream:
-            wait(str(location), stream)
-    elif isinstance(location, io.StringIO):
-        stream = cast(io.TextIOWrapper, io.StringIO(location.getvalue()))
-        wait("StringIO buffer", stream)
-    else:
-        raise UnsupportedLocationType(f"{type(location)}")
+    for attempt in retrying:
+        with attempt:
+            _wait_with_retry(location, messages)

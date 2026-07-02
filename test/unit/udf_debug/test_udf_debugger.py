@@ -10,6 +10,7 @@ import pyexasol
 import pytest
 
 from exasol.pytest_slc.udf_debug import udf_debug
+from exasol.pytest_slc.udf_debug.messages import wait_for_messages
 
 
 @pytest.mark.skip
@@ -69,37 +70,29 @@ def send(ip: IpAddress, message: str):
     # ip = IpAddress("localhost", 3000)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect(ip.as_tuple)
-        result = s.sendall(message.encode())
-        udf_debug.LOG.debug(f'sendall() returned {result}')
+        result = s.sendall(message.encode() + b"\n")
 
 
 def test_x1(client_address) -> None:
     ip = None
-    # class
+    # use a class in the test!
     def query_executor(query: str) -> pyexasol.ExaStatement:
         nonlocal ip
         ip = parse_script_output_address(query)
-        # print(f'{ip}')
         return Mock()
 
-    # result = query_executor(f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{client_address}'")
     output = io.StringIO()
-    # sys.stdout
-    # open("a.txt", "w")
+    messages = [
+        "message one",
+        "message two",
+        "message three",
+    ]
     with udf_debug.UdfDebugger(query_executor, output=output):
-        udf_debug.LOG.debug(f'sending to {ip}')
-        send(ip, "message one\n")
-        send(ip, "message two\n")
-        send(ip, "message three\n")
-
-        # wait_for_message(output, ...)
-        # wait_for_message(buffer=output, ...)
-        # wait_for_message(file=Path("a.txt"), ...)
-        while not all(f"message {n}" in output.getvalue()):
-            pass
+        for m in messages:
+            send(ip, m)
+        wait_for_messages(output, *messages)
 
     line = output.getvalue()
-    print(f'output.getvalue(): {line}')
     return
     expected = 3
     result = []

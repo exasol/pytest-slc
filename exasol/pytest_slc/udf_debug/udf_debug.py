@@ -32,10 +32,6 @@ from exasol.pytest_slc.udf_debug.ip_address import IpAddress
 TextStream: TypeAlias = TextIO | io.TextIOBase
 QueryExecutor: TypeAlias = Callable[[str], pyexasol.ExaStatement]
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
 LOG = logging.getLogger(__name__)
 
 
@@ -51,12 +47,12 @@ class LogHandler(socketserver.StreamRequestHandler):
     """
 
     def handle(self):
-        LOG.debug("LogHandler.handle()")
+        # LOG.debug("LogHandler.handle()")
         address = f"{self.client_address[0]}:{self.client_address[1]}"
         buffer = []
         while True:
             data = self.rfile.readline()
-            LOG.debug(f'handle(): data = {data}')
+            # LOG.debug(f'handle(): data = {data}')
             if not data:
                 break
             buffer.append(data.decode("utf-8", "replace").rstrip("\r\n"))
@@ -81,16 +77,7 @@ class LogServer(socketserver.ThreadingTCPServer):
     def __init__(self, server_address: IpAddress, output: Queue):
         output.put_nowait(f"Server address: {server_address}\n")
         self.output = output
-        LOG.debug("initializing ThreadingTCPServer with LogHandler")
         super().__init__(server_address.as_tuple, LogHandler)
-
-
-class ServerThread(Thread):
-    def __init__(self):
-        super().__init__()
-
-    def run(self):
-        pass
 
 
 class LogServerProcess(Process):
@@ -116,35 +103,6 @@ class LogServerProcess(Process):
         )
 
 
-# class ScriptOutputThread(Thread):
-#     """
-#     Serve UDF output in a background thread.
-#     """
-#
-#     def __init__(self, server_address: tuple[str, int], output: Queue):
-#         super().__init__()
-#         self.server_address = server_address
-#         LOG.debug("ScriptOutputThread.__init__()")
-#         # self.finished = False
-#
-#     def run(self):
-#         server = LogServer(self.server_address, output)
-#         try:
-#             LOG.debug("server.serve_forever()")
-#             server.serve_forever(poll_interval=1)
-#         finally:
-#             server.shutdown()
-#             server.server_close()
-#             del server
-
-
-# def default_host() -> str:
-#     try:
-#         return socket.gethostbyname(socket.gethostname())
-#     except OSError:
-#         return "0.0.0.0"
-
-
 def _output_service(
     queue: Queue,
     server_address: IpAddress,
@@ -164,34 +122,22 @@ def _output_service(
     # Function now requires a valid server_address to be passed.
     queue.put_nowait(f">>> bind the output to {server_address}")
 
-    # server = LogServer(server_address=(host, port), output=queue)
     server = LogServer(server_address=server_address, output=queue)
     server_ready.set()
     try:
-        LOG.debug("_output_service: server.serve_forever()")
-        t = Thread(target=server.serve_forever, kwargs={"poll_interval": 1})
-        t.start()
-        LOG.debug("_output_service: after start")
-
+        thread = Thread(target=server.serve_forever, kwargs={"poll_interval": 1})
+        thread.start()
         shutdown_server.wait()
-        LOG.debug(f"_output_service: shutting down the server")
         server.shutdown()
-
-        t.join()
-        # server.serve_forever(poll_interval=1)
-        LOG.debug("After server.serve_forever()")
+        thread.join()
     finally:
-        LOG.debug("_output_service(): finally ")
         sys.stdout.flush()
-        # server.shutdown()
         server.server_close()
         del server
-    LOG.debug("_output_service: End of _output_service()")
 
 
 class Consumer(Thread):
     def __init__(self, queue: Queue, output: TextStream):
-        LOG.debug("Consumer.__init__()")
         super().__init__()
         self._queue = queue
         self._stop = threading.Event()
@@ -205,9 +151,10 @@ class Consumer(Thread):
         while not self._stop.is_set():
             try:
                 message = self._queue.get()
-                LOG.debug(f"Consumer: message = {message}")
+                # LOG.debug(f"Consumer: message = {message.strip()}")
                 # try to keep messages identical
-                self._output.write(f"UDF Debug {message}\n")
+                # Removed trailing newline
+                self._output.write(f"UDF Debug {message}")
                 self._output.flush()
             except (OSError, ValueError):
                 traceback.print_exc()
@@ -223,17 +170,9 @@ def start_udf_output_redirect_consumer(
     Start the output forwarding process and its consumer thread.
     """
 
-    def local_ip() -> str:
-        hostname = socket.gethostname()
-        return socket.gethostbyname(hostname)
-
     server = IpAddress.create(host, 3000)
-    # host = local_ip() if host is None else host
-    # port = 3000
-    LOG.info("Sending UDF output to: %s", server)
-
     queue: Queue = Queue()
-    # events to enable process to signal being ready and
+    # events to enable LogServerProcess to signal being ready and
     # caller to request server shutdown
     server_ready = mp.Event()
     shutdown_server = mp.Event()
@@ -245,21 +184,16 @@ def start_udf_output_redirect_consumer(
     )
     process.start()
 
-    stdout_thread = Consumer(queue, output)
-    stdout_thread.start()
+    consumer = Consumer(queue, output)
+    consumer.start()
 
     if not server_ready.wait(30):
-        raise Exception("timeout")
+        raise TimeoutError("LogServerProcess did not signal readyness")
 
     # Create socket writer client simulating the database and a UDF
     # running inside.
     query(f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{server}'")
-    return process, queue, stdout_thread, shutdown_server
-
-    # Failure: time out required
-    stdout_thread.stop()
-    raise UdfDebugException("Could not start udf_debug.py")
-    return None, None, None
+    return process, queue, consumer, shutdown_server
 
 
 class UdfDebugger:
@@ -272,14 +206,13 @@ class UdfDebugger:
         query: QueryExecutor,
         server: str | None = None,
         output: TextStream | None = None,
-        # output: TextStream | None = sys.stdout,
     ):
         self.output = output or sys.stdout
         self.query = query
         self.server = server
         self._process = None
         self._queue = None
-        self._stdout_thread: Consumer | None = None
+        self._consumer: Consumer | None = None
         self._shutdown_server = None
 
     def __enter__(self):
@@ -292,7 +225,7 @@ class UdfDebugger:
         return self._activate()
 
     def _activate(self):
-        self._process, self._queue, self._stdout_thread, self._shutdown_server = (
+        self._process, self._queue, self._consumer, self._shutdown_server = (
             start_udf_output_redirect_consumer(
                 query=self.query, host=self.server, output=self.output
             )
@@ -301,11 +234,8 @@ class UdfDebugger:
 
     def __exit__(self, type_, value, trace_back):
         if self._process is not None:
-            # self._process.terminate()
-            # os.kill(self._process.pid, signal.SIGINT)
             self._shutdown_server.set()
-            # Wait 1 second to give socket time to process all remaining messages.
-            self._stdout_thread.stop()
+            self._consumer.stop()
 
         self._process = None
         self._queue = None
