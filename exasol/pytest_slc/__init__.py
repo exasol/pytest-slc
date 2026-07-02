@@ -242,3 +242,11 @@ def activate_script_languages_for_module(
 ):
     with activate_script_languages(pyexasol_connection, script_languages):
         yield
+
+
+@pytest.fixture(scope="function")
+def activate_script_languages_for_function(
+    script_languages, pyexasol_connection: pyexasol.ExaConnection
+):
+    with activate_script_languages(pyexasol_connection, script_languages):
+        yield
