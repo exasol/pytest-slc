@@ -1,6 +1,5 @@
 import contextlib
 import io
-import logging
 from datetime import timedelta
 from pathlib import Path
 
@@ -11,7 +10,6 @@ from exasol.pytest_slc.udf_debug.messages import (
     wait_for_messages,
 )
 
-LOG = logging.getLogger(__name__)
 LINES = ["line 1", "line 2"]
 TIMEOUT = {"timeout": timedelta(seconds=0.02)}
 
