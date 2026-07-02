@@ -26,10 +26,10 @@ def not_raises(exception):
 def reading(tmp_path, request):
     @contextlib.contextmanager
     def file_reading(content: str):
-       file = tmp_path / "file.txt"
-       file.write_text(content)
-       with file.open("r") as f:
-           yield f.readline
+        file = tmp_path / "file.txt"
+        file.write_text(content)
+        with file.open("r") as f:
+            yield f.readline
 
     @contextlib.contextmanager
     def string_reading(content):

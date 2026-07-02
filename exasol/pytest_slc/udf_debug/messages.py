@@ -1,6 +1,6 @@
+from collections.abc import Callable
 from datetime import timedelta
 from typing import (
-    Callable,
     TypeAlias,
 )
 
@@ -22,6 +22,4 @@ def wait_for_messages(
             # skip messages already found
             messages = [m for m in messages if m not in line]
             if messages:
-                raise TimeoutError(
-                    f"Did not find expected messages {list(messages)}."
-                )
+                raise TimeoutError(f"Did not find expected messages {list(messages)}.")
