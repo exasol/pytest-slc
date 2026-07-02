@@ -13,6 +13,16 @@ def wait_for_messages(
     *expected_messages: str,
     timeout: timedelta = timedelta(seconds=10),
 ) -> None:
+    """
+    Wait until all of the expected_messages were found as substrings in
+    the lines read by ``read_line``.
+
+    Raises:
+
+       TimeoutError if not all messages could be found before the specified
+                    timeout.
+    """
+
     messages = list(expected_messages)
     for attempt in Retrying(stop=stop_after_delay(timeout)):
         with attempt:
