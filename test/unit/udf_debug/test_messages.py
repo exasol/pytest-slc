@@ -2,6 +2,7 @@ import contextlib
 import io
 import logging
 from datetime import timedelta
+from pathlib import Path
 
 import pytest
 import tenacity
@@ -19,15 +20,17 @@ TIMING = {
 }
 
 
+def create_location(location_type: str, tmp_path: Path, content: str) -> Path | io.StringIO:
+    if location_type == "buffer":
+        return io.StringIO(content)
+    location = tmp_path / "file.txt"
+    location.write_text(content)
+    return location
+
+
 @pytest.mark.parametrize("location_type", ["file", "buffer"])
 def test_failure(tmp_path, location_type):
-    content = "line 1\nline 3\n"
-    if location_type == "file":
-        location = tmp_path / "file.txt"
-        location.write_text(content)
-    else:
-        location = io.StringIO(content)
-
+    location = create_location(location_type, tmp_path, "line 1\nline 3\n")
     with pytest.raises(tenacity.RetryError):
         wait_for_messages(location, *LINES, **TIMING)
 
@@ -43,12 +46,7 @@ def not_raises(exception):
 @pytest.mark.parametrize("location_type", ["file", "buffer"])
 def test_success(tmp_path, location_type):
     content = "\n".join(LINES)
-    if location_type == "file":
-        location = tmp_path / "file.txt"
-        location.write_text(content)
-    else:
-        location = io.StringIO(content)
-
+    location = create_location(location_type, tmp_path, content)
     with not_raises(tenacity.RetryError):
         wait_for_messages(location, *LINES, **TIMING)
 
