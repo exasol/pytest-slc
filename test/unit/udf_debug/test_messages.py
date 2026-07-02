@@ -6,12 +6,14 @@ from pathlib import Path
 import pytest
 import tenacity
 
-from exasol.pytest_slc.udf_debug.messages import (
-    wait_for_messages,
-)
+from exasol.pytest_slc.udf_debug.messages import wait_for_messages
 
-LINES = ["line 1", "line 2"]
-TIMEOUT = {"timeout": timedelta(seconds=0.02)}
+TIMEOUT = timedelta(seconds=0.02)
+
+
+@pytest.fixture
+def sample_lines() -> str:
+    return "line 1\nline 2\nline 3\n"
 
 
 @contextlib.contextmanager
@@ -42,15 +44,15 @@ def reading(tmp_path, request):
         return string_reading
 
 
-def test_failure(reading):
-    content = "line 1\nline 3\n"
-    with reading(content) as reader:
+def test_failure(reading, sample_lines):
+    expected_messages = ["line 1", "line 99"]
+    with reading(sample_lines) as reader:
         with pytest.raises(tenacity.RetryError):
-            wait_for_messages(reader, *LINES, **TIMEOUT)
+            wait_for_messages(reader, *expected_messages, timeout=TIMEOUT)
 
 
-def test_success(reading):
-    content = "\n".join(LINES)
-    with reading(content) as reader:
+def test_success(reading, sample_lines):
+    expected_messages = ["line 1", "line 3"]
+    with reading(sample_lines) as reader:
         with not_raises(tenacity.RetryError):
-            wait_for_messages(reader, *LINES, **TIMEOUT)
+            wait_for_messages(reader, *expected_messages, timeout=TIMEOUT)
