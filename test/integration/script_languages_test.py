@@ -44,5 +44,6 @@ def test_setting_script_languages_wrapper(pytester):
         SCRIPT_LANGUAGES_OPTION,
         expected_script_languages,
     )
+    # testing against SaaS API is skipped
     assert result.ret == pytest.ExitCode.OK
     result.assert_outcomes(passed=1, skipped=1)
