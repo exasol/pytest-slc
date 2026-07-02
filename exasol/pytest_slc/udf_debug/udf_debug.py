@@ -31,6 +31,7 @@ from exasol.pytest_slc.udf_debug.ip_address import IpAddress
 
 TextStream: TypeAlias = TextIO | io.TextIOBase
 QueryExecutor: TypeAlias = Callable[[str], pyexasol.ExaStatement]
+Printer: TypeAlias = Callable[[str], None]
 
 LOG = logging.getLogger(__name__)
 
@@ -74,6 +75,7 @@ class LogServer(socketserver.ThreadingTCPServer):
     daemon_threads = True
     block_on_close = False
 
+    # rename output: to queue
     def __init__(self, server_address: IpAddress, output: Queue):
         output.put_nowait(f"Server address: {server_address}\n")
         self.output = output
@@ -137,11 +139,11 @@ def _output_service(
 
 
 class Consumer(Thread):
-    def __init__(self, queue: Queue, output: TextStream):
+    def __init__(self, queue: Queue, printer: Printer):
         super().__init__()
         self._queue = queue
         self._stop = threading.Event()
-        self._output = output
+        self._printer = printer
 
     def stop(self) -> None:
         self._stop.set()
@@ -154,8 +156,7 @@ class Consumer(Thread):
                 # LOG.debug(f"Consumer: message = {message.strip()}")
                 # try to keep messages identical
                 # Removed trailing newline
-                self._output.write(f"UDF Debug {message}")
-                self._output.flush()
+                self._printer(f"UDF Debug {message}")
             except (OSError, ValueError):
                 traceback.print_exc()
         self._queue.close()
@@ -164,7 +165,7 @@ class Consumer(Thread):
 def start_udf_output_redirect_consumer(
     query: QueryExecutor,
     host: str | None,
-    output: io.TextIOBase,
+    printer: Printer,
 ):
     """
     Start the output forwarding process and its consumer thread.
@@ -184,7 +185,7 @@ def start_udf_output_redirect_consumer(
     )
     process.start()
 
-    consumer = Consumer(queue, output)
+    consumer = Consumer(queue, printer)
     consumer.start()
 
     if not server_ready.wait(30):
@@ -205,9 +206,10 @@ class UdfDebugger:
         self,
         query: QueryExecutor,
         server: str | None = None,
-        output: TextStream | None = None,
+        # output: TextStream | None = None,
+        printer: Printer | None = None,
     ):
-        self.output = output or sys.stdout
+        self.printer = printer or print
         self.query = query
         self.server = server
         self._process = None
@@ -227,7 +229,7 @@ class UdfDebugger:
     def _activate(self):
         self._process, self._queue, self._consumer, self._shutdown_server = (
             start_udf_output_redirect_consumer(
-                query=self.query, host=self.server, output=self.output
+                query=self.query, host=self.server, printer=self.printer
             )
         )
         return self

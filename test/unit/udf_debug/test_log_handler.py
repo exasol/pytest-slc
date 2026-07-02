@@ -1,16 +1,12 @@
 import io
 import logging
 import queue
-import re
-from dataclasses import dataclass
-from inspect import cleandoc
-from queue import Queue
 from unittest.mock import (
     Mock,
     call,
 )
 
-import exasol.pytest_slc.udf_debug as impl
+import exasol.pytest_slc.udf_debug.udf_debug as impl
 from exasol.pytest_slc.udf_debug.ip_address import IpAddress
 
 
