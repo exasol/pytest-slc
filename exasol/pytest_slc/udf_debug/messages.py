@@ -26,7 +26,7 @@ def wait_for_messages(
     retrying = Retrying(
             stop=stop_after_delay(timeout),
         )
-    messages = expected_messages
+    messages = list(expected_messages)
     for attempt in retrying:
         with attempt:
             line = read_line()

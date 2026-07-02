@@ -26,9 +26,9 @@ def not_raises(exception):
 def reading(tmp_path, request):
     @contextlib.contextmanager
     def file_reading(content: str):
-       location = tmp_path / "file.txt"
-       location.write_text(content)
-       with location.open("r") as f:
+       file = tmp_path / "file.txt"
+       file.write_text(content)
+       with file.open("r") as f:
            yield f.readline
 
     @contextlib.contextmanager
