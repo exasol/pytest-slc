@@ -14,8 +14,16 @@ def wait_for_messages(
     timeout: timedelta = timedelta(seconds=10),
 ) -> None:
     """
-    Wait until all of the expected_messages were found as substrings in
-    the lines read by ``read_line``.
+    Wait until all of the ``expected_messages`` were found as substrings
+    in the lines read by ``read_line``.
+
+    A single line can lead to multiple expected_messages being found.
+
+    Args:
+
+        * read_line: function to read the next line of an input stream
+        * expected_messages: list of expected messages
+        * timeout: maximum time until all expected messages must be found
 
     Raises:
 
