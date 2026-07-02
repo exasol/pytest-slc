@@ -2,7 +2,10 @@ from collections.abc import Callable
 from datetime import timedelta
 from typing import TypeAlias
 
-from tenacity import Retrying
+from tenacity import (
+    Retrying,
+    TryAgain,
+)
 from tenacity.stop import stop_after_delay
 
 LineReader: TypeAlias = Callable[[], str]
@@ -38,4 +41,7 @@ def wait_for_messages(
             # skip messages already found
             messages = [m for m in messages if m not in line]
             if messages:
-                raise TimeoutError(f"Did not find expected messages {list(messages)}.")
+                raise TryAgain()
+
+    if messages:
+        raise TimeoutError(f"Did not find expected messages {list(messages)}.")
