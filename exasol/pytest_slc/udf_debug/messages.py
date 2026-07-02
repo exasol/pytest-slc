@@ -30,7 +30,7 @@ def wait_for_messages(
     for attempt in retrying:
         with attempt:
             line = read_line()
-            # messages not found, yet
+            # skip messages already found
             messages = [m for m in messages if m not in line]
             if messages:
                 raise TimeoutError(
