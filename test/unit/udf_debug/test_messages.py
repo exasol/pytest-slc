@@ -38,10 +38,7 @@ def reading(tmp_path, request):
         buffer = io.StringIO(content)
         yield buffer.readline
 
-    if request.param == Path:
-        return file_reading
-    else:
-        return string_reading
+    return file_reading if request.param == Path else string_reading
 
 
 def test_failure(reading, sample_lines):
