@@ -1,20 +1,12 @@
-import contextlib
-import io
-import logging
-from dataclasses import dataclass
 from datetime import timedelta
-from pathlib import Path
 from typing import (
     Callable,
     TypeAlias,
-    cast,
 )
 
 from tenacity import Retrying
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
-LOG = logging.getLogger(__name__)
 LineReader: TypeAlias = Callable[[], str]
 
 
@@ -23,11 +15,8 @@ def wait_for_messages(
     *expected_messages: str,
     timeout: timedelta = timedelta(seconds=10),
 ) -> None:
-    retrying = Retrying(
-            stop=stop_after_delay(timeout),
-        )
     messages = list(expected_messages)
-    for attempt in retrying:
+    for attempt in Retrying(stop=stop_after_delay(timeout)):
         with attempt:
             line = read_line()
             # skip messages already found
