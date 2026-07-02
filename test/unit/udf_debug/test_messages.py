@@ -20,7 +20,9 @@ TIMING = {
 }
 
 
-def create_location(location_type: str, tmp_path: Path, content: str) -> Path | io.StringIO:
+def create_location(
+    location_type: str, tmp_path: Path, content: str
+) -> Path | io.StringIO:
     if location_type == "buffer":
         return io.StringIO(content)
     location = tmp_path / "file.txt"
