@@ -8,33 +8,12 @@ import pytest
 import tenacity
 
 from exasol.pytest_slc.udf_debug.messages import (
-    UnsupportedLocationType,
     wait_for_messages,
 )
 
 LOG = logging.getLogger(__name__)
 LINES = ["line 1", "line 2"]
-TIMING = {
-    "interval": timedelta(seconds=0.01),
-    "timeout": timedelta(seconds=0.02),
-}
-
-
-def create_location(
-    location_type: str, tmp_path: Path, content: str
-) -> Path | io.StringIO:
-    if location_type == "buffer":
-        return io.StringIO(content)
-    location = tmp_path / "file.txt"
-    location.write_text(content)
-    return location
-
-
-@pytest.mark.parametrize("location_type", ["file", "buffer"])
-def test_failure(tmp_path, location_type):
-    location = create_location(location_type, tmp_path, "line 1\nline 3\n")
-    with pytest.raises(tenacity.RetryError):
-        wait_for_messages(location, *LINES, **TIMING)
+TIMEOUT = {"timeout": timedelta(seconds=0.02)}
 
 
 @contextlib.contextmanager
@@ -45,15 +24,35 @@ def not_raises(exception):
         raise pytest.fail(f"Did raise {exception}")
 
 
-@pytest.mark.parametrize("location_type", ["file", "buffer"])
-def test_success(tmp_path, location_type):
+@pytest.fixture(params=[Path, io.StringIO])
+def reading(tmp_path, request):
+    @contextlib.contextmanager
+    def file_reading(content: str):
+       location = tmp_path / "file.txt"
+       location.write_text(content)
+       with location.open("r") as f:
+           yield f.readline
+
+    @contextlib.contextmanager
+    def string_reading(content):
+        buffer = io.StringIO(content)
+        yield buffer.readline
+
+    if isinstance(request.param, Path):
+        return file_reading
+    else:
+        return string_reading
+
+
+def test_failure(reading):
+    content = "line 1\nline 3\n"
+    with reading(content) as reader:
+        with pytest.raises(tenacity.RetryError):
+            wait_for_messages(reader, *LINES, **TIMEOUT)
+
+
+def test_success(reading):
     content = "\n".join(LINES)
-    location = create_location(location_type, tmp_path, content)
-    with not_raises(tenacity.RetryError):
-        wait_for_messages(location, *LINES, **TIMING)
-
-
-def test_unsupported_location_type():
-    illegal_location = ["list"]
-    with pytest.raises(UnsupportedLocationType):
-        wait_for_messages(illegal_location)
+    with reading(content) as reader:
+        with not_raises(tenacity.RetryError):
+            wait_for_messages(reader, *LINES, **TIMEOUT)
