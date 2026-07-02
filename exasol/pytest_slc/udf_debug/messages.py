@@ -1,8 +1,6 @@
 from collections.abc import Callable
 from datetime import timedelta
-from typing import (
-    TypeAlias,
-)
+from typing import TypeAlias
 
 from tenacity import Retrying
 from tenacity.stop import stop_after_delay
