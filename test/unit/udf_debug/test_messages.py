@@ -1,19 +1,19 @@
 import contextlib
 import io
-import logging
 from datetime import timedelta
 from pathlib import Path
 
 import pytest
 import tenacity
 
-from exasol.pytest_slc.udf_debug.messages import (
-    wait_for_messages,
-)
+from exasol.pytest_slc.udf_debug.messages import wait_for_messages
 
-LOG = logging.getLogger(__name__)
-LINES = ["line 1", "line 2"]
-TIMEOUT = {"timeout": timedelta(seconds=0.02)}
+TIMEOUT = timedelta(seconds=0.02)
+
+
+@pytest.fixture
+def sample_lines() -> str:
+    return "line 1\nline 2\nline 3\n"
 
 
 @contextlib.contextmanager
@@ -28,31 +28,28 @@ def not_raises(exception):
 def reading(tmp_path, request):
     @contextlib.contextmanager
     def file_reading(content: str):
-       location = tmp_path / "file.txt"
-       location.write_text(content)
-       with location.open("r") as f:
-           yield f.readline
+        file = tmp_path / "file.txt"
+        file.write_text(content)
+        with file.open("r") as f:
+            yield f.readline
 
     @contextlib.contextmanager
     def string_reading(content):
         buffer = io.StringIO(content)
         yield buffer.readline
 
-    if isinstance(request.param, Path):
-        return file_reading
-    else:
-        return string_reading
+    return file_reading if request.param == Path else string_reading
 
 
-def test_failure(reading):
-    content = "line 1\nline 3\n"
-    with reading(content) as reader:
+def test_failure(reading, sample_lines):
+    expected_messages = ["line 1", "line 99"]
+    with reading(sample_lines) as reader:
         with pytest.raises(tenacity.RetryError):
-            wait_for_messages(reader, *LINES, **TIMEOUT)
+            wait_for_messages(reader, *expected_messages, timeout=TIMEOUT)
 
 
-def test_success(reading):
-    content = "\n".join(LINES)
-    with reading(content) as reader:
+def test_success(reading, sample_lines):
+    expected_messages = ["line 1", "line 3"]
+    with reading(sample_lines) as reader:
         with not_raises(tenacity.RetryError):
-            wait_for_messages(reader, *LINES, **TIMEOUT)
+            wait_for_messages(reader, *expected_messages, timeout=TIMEOUT)
