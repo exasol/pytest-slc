@@ -56,6 +56,13 @@ class LogServer(socketserver.ThreadingTCPServer):
 
 
 class LogServerProcess(Process):
+    """
+    Runs the LogServer as thread in a separate process.
+
+    Calling method ``shutdown()`` uses an event to interrupt the main thread,
+    shutdown the server, stop the thread and terminate the process.
+    """
+
     def __init__(self, ip_address: IpAddress, queue: Queue):
         self.queue = queue
         self.ip_address = ip_address

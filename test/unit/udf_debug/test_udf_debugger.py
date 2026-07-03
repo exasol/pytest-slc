@@ -12,6 +12,7 @@ from exasol.pytest_slc.udf_debug import (
     UdfDebugger,
     wait_for_messages,
 )
+from exasol.pytest_slc.udf_debug.script_output_redirect import alter_session_sql
 
 
 @dataclass
@@ -21,7 +22,7 @@ class IpParser:
 
     def _match(self, statement: str) -> re.Match:
         if not self._pattern:
-            sql = "ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='(.*):([0-9]+)'"
+            sql = alter_session_sql("(.*):([0-9]+)")
             pattern = sql.replace(" ", " +").replace("=", " *= *")
             self._pattern = re.compile(pattern)
         return self._pattern.match(statement)

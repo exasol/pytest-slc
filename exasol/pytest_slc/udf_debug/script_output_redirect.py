@@ -6,6 +6,7 @@ import multiprocessing as mp
 import threading
 import traceback
 from collections.abc import Callable
+from datetime import timedelta
 from threading import Thread
 from typing import TypeAlias
 
@@ -18,6 +19,14 @@ PrintFunc: TypeAlias = Callable[[str], None]
 QueryFunc: TypeAlias = Callable[[str], pyexasol.ExaStatement]
 
 
+DEFAULT_PORT = 3000
+SERVER_START_TIMEOUT = timedelta(seconds=30)
+
+
+def alter_session_sql(address: str) -> str:
+    return f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{address}'"
+
+
 class UdfDebugException(Exception):
     """
     Raised in case the UDF Debug server could not be started.
@@ -25,6 +34,11 @@ class UdfDebugException(Exception):
 
 
 class Consumer(Thread):
+    """
+    Consumes the log messages from the specified ``queue`` and forwards
+    them to the specified print function ``print_func``.
+    """
+
     def __init__(self, queue: mp.Queue, print_func: PrintFunc):
         super().__init__()
         self._queue = queue
@@ -47,6 +61,16 @@ class Consumer(Thread):
 
 
 class ScriptOutputRedirect:
+    """
+    Configures a UDF Script Output Redirect using sql statement ``ALTER
+    SESSION SET SCRIPT_OUTPUT_ADDRESS``.
+
+    Starts a ``LogServerProcess`` and a ``Consumer`` connected via a
+    ``multiprocessing.Queue``:
+
+    Server -> Queue -> Consumer.
+    """
+
     def __init__(
         self,
         query: QueryFunc,
@@ -67,9 +91,10 @@ class ScriptOutputRedirect:
         self._consumer = Consumer(queue, self._print)
         self._consumer.start()
 
-        if not self._log_server.ready.wait(30):
-            raise UdfDebugException("LogServerProcess did not signal readyness")
-        self._query(f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{self.ip_address}'")
+        timeout = SERVER_START_TIMEOUT
+        if not self._log_server.ready.wait(timeout.total_seconds()):
+            raise UdfDebugException(f"LogServerProcess not ready after {timeout}")
+        self._query(alter_session_sql(self.ip_address))
 
     def disable(self) -> None:
         if self._log_server:
