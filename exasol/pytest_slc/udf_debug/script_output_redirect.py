@@ -84,6 +84,10 @@ class ScriptOutputRedirect:
         self._consumer: Consumer | None = None
 
     def activate(self) -> None:
+        """
+        Activates the Script Output Redirect.
+        """
+        
         queue: mp.Queue = mp.Queue()
         self._log_server = LogServerProcess(self.ip_address, queue)
         self._log_server.start()
@@ -97,6 +101,10 @@ class ScriptOutputRedirect:
         self._query(alter_session_sql(self.ip_address))
 
     def disable(self) -> None:
+        """
+        Disables the Script Output Redirect.
+        """
+        
         if self._log_server:
             self._log_server.shutdown()
             self._log_server = None
