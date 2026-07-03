@@ -8,7 +8,6 @@ from unittest.mock import (
 
 import exasol.pytest_slc.udf_debug.log_server as impl
 
-# import exasol.pytest_slc.udf_debug.udf_debug as impl
 from exasol.pytest_slc.udf_debug.ip_address import IpAddress
 
 
