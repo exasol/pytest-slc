@@ -23,7 +23,7 @@ DEFAULT_PORT = 3000
 SERVER_START_TIMEOUT = timedelta(seconds=30)
 
 
-def alter_session_sql(address: str) -> str:
+def alter_session_sql(address: str | IpAddress) -> str:
     return f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{address}'"
 
 
@@ -87,7 +87,7 @@ class ScriptOutputRedirect:
         """
         Activates the Script Output Redirect.
         """
-        
+
         queue: mp.Queue = mp.Queue()
         self._log_server = LogServerProcess(self.ip_address, queue)
         self._log_server.start()
@@ -104,7 +104,7 @@ class ScriptOutputRedirect:
         """
         Disables the Script Output Redirect.
         """
-        
+
         if self._log_server:
             self._log_server.shutdown()
             self._log_server = None
