@@ -11,7 +11,7 @@ def default_host() -> str:
     except OSError:
         # B104: possibly binding to all interfaces is accepted for debugging
         # scenarios.
-        return "0.0.0.0" # B104
+        return "0.0.0.0"  # B104
 
 
 @dataclass

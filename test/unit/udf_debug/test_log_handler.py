@@ -54,4 +54,3 @@ def test_queue_full(client_address, caplog):
     actual = [rt[1:] for rt in caplog.record_tuples]
     expected = [(logging.ERROR, "UDF debugging queue is full")] * 2
     assert actual == expected
-
