@@ -33,7 +33,7 @@ class LogHandler(socketserver.StreamRequestHandler):
                 message = f"{address}> {''.join(buffer).rstrip()}\n"
                 try:
                     self.server.output.put_nowait(message)
-                except queue.Full:
+                except queue.Full as ex:
                     logging.exception("UDF debugging queue is full")
                 buffer = []
 

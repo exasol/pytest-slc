@@ -52,5 +52,6 @@ def test_queue_full(client_address, caplog):
     server.output.put_nowait.side_effect = queue.Full
     handler = log_handler(data + [""], client_address, server=server)
     actual = [rt[1:] for rt in caplog.record_tuples]
-    expected = [(logging.ERROR, "UDF debugging queue is full: ")] * 2
+    expected = [(logging.ERROR, "UDF debugging queue is full")] * 2
     assert actual == expected
+
