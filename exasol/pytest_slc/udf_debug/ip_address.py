@@ -9,7 +9,9 @@ def default_host() -> str:
         hostname = socket.gethostname()
         return socket.gethostbyname(hostname)
     except OSError:
-        return "0.0.0.0"
+        # B104: possibly binding to all interfaces is accepted for debugging
+        # scenarios.
+        return "0.0.0.0" # B104
 
 
 @dataclass

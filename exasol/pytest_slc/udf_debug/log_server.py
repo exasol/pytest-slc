@@ -16,16 +16,18 @@ LOG = logging.getLogger(__name__)
 
 class LogHandler(socketserver.StreamRequestHandler):
     """
-    Read output lines from the UDF log socket.
+    This handler is instantiated for each request sent to the surrounding
+    LogServer.
+
+    Read output lines from the UDF log socket and forward them to the
+    output queue of the surrounding LogServer.
     """
 
     def handle(self):
-        # LOG.debug("LogHandler.handle()")
         address = f"{self.client_address[0]}:{self.client_address[1]}"
         buffer = []
         while True:
             data = self.rfile.readline()
-            # LOG.debug(f'handle(): data = {data}')
             if not data:
                 break
             buffer.append(data.decode("utf-8", "replace").rstrip("\r\n"))
