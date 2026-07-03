@@ -108,7 +108,8 @@ class ScriptOutputRedirect:
 
         if self._log_server:
             self._log_server.shutdown()
-            self._log_server.join()
+            # advised by codex review but blocks the test from terminating:
+            # self._log_server.join()
             self._log_server = None
         if self._consumer:
             self._consumer.stop()
