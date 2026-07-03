@@ -97,6 +97,7 @@ class ScriptOutputRedirect:
 
         timeout = SERVER_START_TIMEOUT
         if not self._log_server.ready.wait(timeout.total_seconds()):
+            self.disable()
             raise UdfDebugException(f"LogServerProcess not ready after {timeout}")
         self._query(alter_session_sql(self.ip_address))
 
@@ -107,6 +108,7 @@ class ScriptOutputRedirect:
 
         if self._log_server:
             self._log_server.shutdown()
+            self._log_server.join()
             self._log_server = None
         if self._consumer:
             self._consumer.stop()
