@@ -1,3 +1,11 @@
+"""
+This file is loaded as test case for running in the Plugin's integration
+tests.
+
+The integration tests use pytester to load the plugin itself and to verify its
+behaviour.
+"""
+
 import pyexasol
 import pytest
 from exasol.python_extension_common.deployment.language_container_validator import temp_schema
