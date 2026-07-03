@@ -7,9 +7,11 @@ from unittest.mock import Mock
 
 import pyexasol
 
-from exasol.pytest_slc.udf_debug import udf_debug
-from exasol.pytest_slc.udf_debug.ip_address import IpAddress
-from exasol.pytest_slc.udf_debug.messages import wait_for_messages
+from exasol.pytest_slc.udf_debug import (
+    IpAddress,
+    UdfDebugger,
+    wait_for_messages,
+)
 
 
 @dataclass
@@ -52,6 +54,7 @@ def socket_sender(ip: IpAddress):
 
 def test_udf_debugger(client_address) -> None:
     con1, con2 = multiprocessing.Pipe()
+
     def pipe_in(data: str) -> None:
         con1.send(data)
 
@@ -64,7 +67,7 @@ def test_udf_debugger(client_address) -> None:
         "message three",
     ]
     ip_parser = IpParser()
-    with udf_debug.UdfDebugger(ip_parser.query, printer=pipe_in):
+    with UdfDebugger(ip_parser.query, print_func=pipe_in):
         with socket_sender(ip_parser.ip) as my_socket:
             for m in messages:
                 my_socket.sendall(m.encode() + b"\n")

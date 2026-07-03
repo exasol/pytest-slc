@@ -25,6 +25,6 @@ class IpAddress:
         return (self.host, self.port)
 
     @classmethod
-    def create(cls, host: str|None, port: int) -> IpAddress:
+    def create(cls, host: str | None, port: int) -> IpAddress:
         host = default_host() if host is None else host
         return cls(host, port)

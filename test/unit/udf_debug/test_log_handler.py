@@ -6,7 +6,9 @@ from unittest.mock import (
     call,
 )
 
-import exasol.pytest_slc.udf_debug.udf_debug as impl
+import exasol.pytest_slc.udf_debug.log_server as impl
+
+# import exasol.pytest_slc.udf_debug.udf_debug as impl
 from exasol.pytest_slc.udf_debug.ip_address import IpAddress
 
 
@@ -52,4 +54,3 @@ def test_queue_full(client_address, caplog):
     actual = [rt[1:] for rt in caplog.record_tuples]
     expected = [(logging.ERROR, "UDF debugging queue is full: ")] * 2
     assert actual == expected
-
