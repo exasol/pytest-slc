@@ -51,7 +51,7 @@ class ScriptOutputRedirect:
         self,
         query: QueryFunc,
         host: str | None,
-        print_func: PrintFunc,
+        print_func: PrintFunc | None,
     ):
         self.ip_address = IpAddress.create(host, 3000)
         self._query = query
@@ -60,7 +60,7 @@ class ScriptOutputRedirect:
         self._consumer: Consumer | None = None
 
     def activate(self) -> None:
-        queue = mp.Queue()
+        queue: mp.Queue = mp.Queue()
         self._log_server = LogServerProcess(self.ip_address, queue)
         self._log_server.start()
 
@@ -72,9 +72,8 @@ class ScriptOutputRedirect:
         self._query(f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{self.ip_address}'")
 
     def disable(self) -> None:
-        if self._log_server is None:
-            return
-        self._log_server.shutdown()
-        self._consumer.stop()
-        self._log_server.queue = None
-        self._log_server = None
+        if self._log_server:
+            self._log_server.shutdown()
+            self._log_server = None
+        if self._consumer:
+            self._consumer.stop()
