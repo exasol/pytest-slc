@@ -42,15 +42,15 @@ class Consumer(Thread):
     def __init__(self, queue: mp.Queue, print_func: PrintFunc):
         super().__init__()
         self._queue = queue
-        self._stop = threading.Event()
+        self._stop_request = threading.Event()
         self._print = print_func
 
     def stop(self) -> None:
-        self._stop.set()
+        self._stop_request.set()
         self._queue.put("Cancel")  # Send message to cancel thread
 
     def run(self):
-        while not self._stop.is_set():
+        while not self._stop_request.is_set():
             try:
                 message = self._queue.get()
                 # was before: output.write(f"UDF DEBUG {msg}\n")
@@ -108,8 +108,8 @@ class ScriptOutputRedirect:
 
         if self._log_server:
             self._log_server.shutdown()
-            # advised by codex review but blocks the test from terminating:
-            # self._log_server.join()
+            self._log_server.join(timeout=10)
             self._log_server = None
         if self._consumer:
             self._consumer.stop()
+            self._consumer.join(timeout=10)

@@ -82,7 +82,7 @@ class LogServerProcess(Process):
             thread.start()
             self._shutdown.wait()
             server.shutdown()
-            thread.join()
+            thread.join(timeout=10)
         finally:
             sys.stdout.flush()
             server.server_close()
