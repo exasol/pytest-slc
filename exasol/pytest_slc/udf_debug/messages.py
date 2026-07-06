@@ -21,13 +21,13 @@ class LogPipe:
     """
 
     def __init__(self):
-        self._con1, self._con2 = multiprocessing.Pipe()
+        self._conn1, self._conn2 = multiprocessing.Pipe()
 
     def input(self, data: str) -> None:
-        self._con1.send(data)
+        self._conn1.send(data)
 
     def output(self) -> str:
-        con = self._con2
+        con = self._conn2
         return con.recv() if con.poll(timeout=1) else ""
 
 
@@ -58,7 +58,7 @@ def wait_for_messages(
     for attempt in Retrying(stop=stop_after_delay(timeout)):
         with attempt:
             line = read_line()
-            LOG.debug('wait_for_messages(): Read line "%s".', line.strip())
+            LOG.debug('Read line "%s".', line.strip())
             # skip messages already found
             messages = [m for m in messages if m not in line]
             if messages:

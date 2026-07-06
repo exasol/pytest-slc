@@ -12,7 +12,6 @@ jobs:
     permissions:
       contents: read
 
-  # See https://github.com/exasol/pytest-slc/issues/38
   run-integration-tests:
     name: Pytester iTests OnPrem (Python-${{ matrix.python_versions }}, Exasol-${{ matrix.exasol_versions}})
     needs:
