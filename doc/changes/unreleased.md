@@ -2,7 +2,7 @@
 
 ## Summary
 
-This release moves class `UdfDebugger` from [exasol-python-test-framework](https://github.com/exasol/exasol-python-test-framework) to PYTSLC.
+This release moves class `UdfDebugger` from [exasol-python-test-framework](https://github.com/exasol/exasol-python-test-framework) to PYTSLC class `UdfOutputLogger`.
 
 ## Features
 
