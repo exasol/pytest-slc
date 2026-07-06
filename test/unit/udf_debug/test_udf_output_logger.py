@@ -1,7 +1,6 @@
 import contextlib
-import multiprocessing
 import re
-import socket
+import socket as socketlib
 from dataclasses import dataclass
 from unittest.mock import Mock
 
@@ -9,6 +8,7 @@ import pyexasol
 
 from exasol.pytest_slc.udf_debug import (
     IpAddress,
+    LogPipe,
     UdfOutputLogger,
     alter_session_sql,
     wait_for_messages,
@@ -41,29 +41,22 @@ class IpParser:
 
 
 @contextlib.contextmanager
-def socket_sender(ip: IpAddress):
-    with socket.socket() as my_socket:
-        my_socket.connect(ip.as_tuple)
-        yield my_socket
+def open_socket(ip: IpAddress):
+    with socketlib.socket() as socket:
+        socket.connect(ip.as_tuple)
+        yield socket
 
 
 def test_udf_output_logger(client_address) -> None:
-    con1, con2 = multiprocessing.Pipe()
-
-    def pipe_in(data: str) -> None:
-        con1.send(data)
-
-    def pipe_out() -> str:
-        return con2.recv()
-
     messages = [
         "message one",
         "message two",
         "message three",
     ]
+    pipe = LogPipe()
     ip_parser = IpParser()
-    with UdfOutputLogger(ip_parser.query, print_func=pipe_in):
-        with socket_sender(ip_parser.ip) as my_socket:
+    with UdfOutputLogger(ip_parser.query, print_func=pipe.input):
+        with open_socket(ip_parser.ip) as socket:
             for m in messages:
-                my_socket.sendall(m.encode() + b"\n")
-        wait_for_messages(pipe_out, *messages)
+                socket.sendall(m.encode() + b"\n")
+        wait_for_messages(pipe.output, *messages)
