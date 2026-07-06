@@ -30,7 +30,6 @@ class Consumer(Thread):
         while not self._stop_request.is_set():
             try:
                 message = self._queue.get()
-                # was before: output.write(f"UDF DEBUG {msg}\n")
                 self._print(f"UDF Debug {message}")
             except (OSError, ValueError):
                 traceback.print_exc()
