@@ -17,4 +17,5 @@ def test_plugin_slc_saas(pytester):
         BACKEND_OPTION, BACKEND_SAAS, "--project-short-tag", "PYSLC"
     )
     assert result.ret == pytest.ExitCode.OK
-    result.assert_outcomes(passed=1, skipped=0)
+    # Expect OnPrem backend is skipped
+    result.assert_outcomes(passed=1, skipped=1)
