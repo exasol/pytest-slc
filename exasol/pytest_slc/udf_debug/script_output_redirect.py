@@ -60,6 +60,9 @@ class Consumer(Thread):
         self._queue.close()
 
 
+# Remove this class and move the code back into the context UdfDebugger
+#
+# UdfOutputLogger
 class ScriptOutputRedirect:
     """
     Configures a UDF Script Output Redirect using sql statement ``ALTER

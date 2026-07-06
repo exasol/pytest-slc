@@ -40,12 +40,6 @@ class IpParser:
         return Mock()
 
 
-def send(ip: IpAddress, message: str):
-    with socket.socket() as s:
-        s.connect(ip.as_tuple)
-        result = s.sendall(message.encode() + b"\n")
-
-
 @contextlib.contextmanager
 def socket_sender(ip: IpAddress):
     with socket.socket() as my_socket:
