@@ -9,10 +9,10 @@ import pyexasol
 
 from exasol.pytest_slc.udf_debug import (
     IpAddress,
-    UdfDebugger,
+    UdfOutputLogger,
     wait_for_messages,
+    alter_session_sql,
 )
-from exasol.pytest_slc.udf_debug.script_output_redirect import alter_session_sql
 
 
 @dataclass
@@ -47,7 +47,7 @@ def socket_sender(ip: IpAddress):
         yield my_socket
 
 
-def test_udf_debugger(client_address) -> None:
+def test_udf_output_logger(client_address) -> None:
     con1, con2 = multiprocessing.Pipe()
 
     def pipe_in(data: str) -> None:
@@ -62,7 +62,7 @@ def test_udf_debugger(client_address) -> None:
         "message three",
     ]
     ip_parser = IpParser()
-    with UdfDebugger(ip_parser.query, print_func=pipe_in):
+    with UdfOutputLogger(ip_parser.query, print_func=pipe_in):
         with socket_sender(ip_parser.ip) as my_socket:
             for m in messages:
                 my_socket.sendall(m.encode() + b"\n")

@@ -3,21 +3,15 @@ Support for capturing the output of UDFs.
 """
 
 import multiprocessing as mp
-import threading
-import traceback
-from collections.abc import Callable
 from datetime import timedelta
-from threading import Thread
-from typing import TypeAlias
 
-import pyexasol
-
+from exasol.pytest_slc.udf_debug.consumer import Consumer
 from exasol.pytest_slc.udf_debug.ip_address import IpAddress
 from exasol.pytest_slc.udf_debug.log_server import LogServerProcess
-
-PrintFunc: TypeAlias = Callable[[str], None]
-QueryFunc: TypeAlias = Callable[[str], pyexasol.ExaStatement]
-
+from exasol.pytest_slc.udf_debug.types import (
+    PrintFunc,
+    QueryFunc,
+)
 
 DEFAULT_PORT = 3000
 SERVER_START_TIMEOUT = timedelta(seconds=30)
@@ -33,43 +27,14 @@ class UdfDebugException(Exception):
     """
 
 
-class Consumer(Thread):
+class UdfOutputLogger:
     """
-    Consumes the log messages from the specified ``queue`` and forwards
-    them to the specified print function ``print_func``.
-    """
+    Context manager for temporary UDF output redirection.
 
-    def __init__(self, queue: mp.Queue, print_func: PrintFunc):
-        super().__init__()
-        self._queue = queue
-        self._stop_request = threading.Event()
-        self._print = print_func
-
-    def stop(self) -> None:
-        self._stop_request.set()
-        self._queue.put("Cancel")  # Send message to cancel thread
-
-    def run(self):
-        while not self._stop_request.is_set():
-            try:
-                message = self._queue.get()
-                # was before: output.write(f"UDF DEBUG {msg}\n")
-                self._print(f"UDF Debug {message}")
-            except (OSError, ValueError):
-                traceback.print_exc()
-        self._queue.close()
-
-
-# Remove this class and move the code back into the context UdfDebugger
-#
-# UdfOutputLogger
-class ScriptOutputRedirect:
-    """
-    Configures a UDF Script Output Redirect using sql statement ``ALTER
-    SESSION SET SCRIPT_OUTPUT_ADDRESS``.
-
-    Starts a ``LogServerProcess`` and a ``Consumer`` connected via a
-    ``multiprocessing.Queue``:
+    * Configures a UDF Script Output Redirect using sql statement ``ALTER
+      SESSION SET SCRIPT_OUTPUT_ADDRESS``.
+    * Starts a ``LogServerProcess`` and a ``Consumer`` connected via a
+      ``multiprocessing.Queue``:
 
     Server -> Queue -> Consumer.
     """
@@ -77,12 +42,12 @@ class ScriptOutputRedirect:
     def __init__(
         self,
         query: QueryFunc,
-        host: str | None,
-        print_func: PrintFunc | None,
+        host: str | None = None,
+        print_func: PrintFunc = print,
     ):
-        self.ip_address = IpAddress.create(host, 3000)
+        self.ip_address = IpAddress.create(host, DEFAULT_PORT)
         self._query = query
-        self._print = print_func or print
+        self._print = print_func
         self._log_server: LogServerProcess | None = None
         self._consumer: Consumer | None = None
 
@@ -120,3 +85,10 @@ class ScriptOutputRedirect:
         if self._consumer:
             self._consumer.stop()
             self._consumer.join(timeout=10)
+
+    def __enter__(self):
+        self.activate()
+        return self
+
+    def __exit__(self, type_, value, trace_back):
+        self.disable()
