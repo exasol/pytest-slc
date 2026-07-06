@@ -1,4 +1,4 @@
-from test.integration.pytest_slc_test_common import load_test_code
+from test.integration.pytester.util.itest_common import load_test_code
 
 import pytest
 from exasol.pytest_backend import (
@@ -6,8 +6,10 @@ from exasol.pytest_backend import (
     BACKEND_OPTION,
 )
 
+pytest_plugins = ["pytester"]
 
-def test_pytest_slc_onprem(pytester):
+
+def test_plugin_slc_onprem(pytester):
     pytester.makepyfile(load_test_code())
     # Technically, CLI option --project-short-tag is only required as
     # distinctive prefix for SaaS instances.  See

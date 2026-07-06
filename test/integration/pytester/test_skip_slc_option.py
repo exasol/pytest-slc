@@ -25,7 +25,12 @@ _TEST_CODE_SKIP = dedent("""
     """)
 
 
-def test_pytest_slc_skip(pytester):
+def test_plugin_skip_slc_option(pytester):
+    """
+    Validates the CLI option SKIP_SLC_OPTION (--skip-slc) skips exporting
+    the SLC.
+    """
+
     pytester.makepyfile(_TEST_CODE_SKIP)
     result = pytester.runpytest(BACKEND_OPTION, BACKEND_ONPREM, SKIP_SLC_OPTION)
     assert result.ret == pytest.ExitCode.OK

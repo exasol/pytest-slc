@@ -48,7 +48,7 @@ jobs:
         run: >
           poetry run -- nox -s test:integration -- --coverage
           --db-version "${MATRIX_EXASOL_VERSION}"
-          -k "test_pytest_slc_onprem or test_pytest_slc_skip"
+          -k "test_plugin_slc_onprem or test_plugin_skip_slc_option"
         env:
           MATRIX_EXASOL_VERSION: ${{ matrix.exasol_versions }}
 

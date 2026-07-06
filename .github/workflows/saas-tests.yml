@@ -58,7 +58,7 @@ jobs:
         id: run-saas-tests
         run: >
           poetry run -- nox -s test:integration -- --coverage
-          -k test_pytest_slc_saas
+          -k test_plugin_slc_saas
         env:
           SAAS_HOST: ${{ secrets.INTEGRATION_TEAM_SAAS_STAGING_HOST }}
           SAAS_ACCOUNT_ID: ${{ secrets.INTEGRATION_TEAM_SAAS_STAGING_ACCOUNT_ID }}
