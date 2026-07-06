@@ -10,8 +10,8 @@ import pyexasol
 from exasol.pytest_slc.udf_debug import (
     IpAddress,
     UdfOutputLogger,
-    wait_for_messages,
     alter_session_sql,
+    wait_for_messages,
 )
 
 

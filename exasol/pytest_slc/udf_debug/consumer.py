@@ -35,4 +35,3 @@ class Consumer(Thread):
             except (OSError, ValueError):
                 traceback.print_exc()
         self._queue.close()
-
