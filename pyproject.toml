@@ -89,6 +89,12 @@ module = [
 ignore_errors = true
 ignore_missing_imports = true
 
+
+[tool.pytest.ini_options]
+markers = [
+    "pytester: marks tests using pytester (deselect with '-m \"not pytester\"')",
+]
+
 [tool.sonar]
 projectKey = "com.exasol:pytest-slc"
 host.url = "https://sonarcloud.io"

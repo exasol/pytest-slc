@@ -7,6 +7,7 @@ from exasol.pytest_backend import (
 )
 
 
+@pytest.mark.pytester
 def test_plugin_slc_saas(pytester):
     pytester.makepyfile(load_test_code())
     # CLI option --project-short-tag is required as distinctive prefix for

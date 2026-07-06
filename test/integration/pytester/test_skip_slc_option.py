@@ -25,6 +25,7 @@ _TEST_CODE_SKIP = dedent("""
     """)
 
 
+@pytest.mark.pytester
 def test_plugin_skip_slc_option(pytester):
     """
     Validates the CLI option SKIP_SLC_OPTION (--skip-slc) skips exporting

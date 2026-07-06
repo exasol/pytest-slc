@@ -9,6 +9,7 @@ from exasol.pytest_backend import (
 pytest_plugins = ["pytester"]
 
 
+@pytest.mark.pytester
 def test_plugin_slc_onprem(pytester):
     pytester.makepyfile(load_test_code())
     # Technically, CLI option --project-short-tag is only required as
