@@ -1,14 +1,12 @@
-import multiprocessing
 from inspect import cleandoc
-from typing import Callable
 
 import pyexasol
 import pytest
 
 from exasol.pytest_slc.udf_debug import (
+    LogPipe,
     UdfOutputLogger,
     wait_for_messages,
-    LogPipe,
 )
 
 
@@ -33,5 +31,5 @@ def test_udf_output_logger(db_schema, pyexasol_connection):
     query(sql)
     pipe = LogPipe()
     with UdfOutputLogger(query, print_func=pipe.input):
-        query('SELECT print_something() FROM DUAL')
+        query("SELECT print_something() FROM DUAL")
         wait_for_messages(pipe.output, "Hello from UDF")
