@@ -6,13 +6,13 @@ on:
 jobs:
 
   pytester-tests:
-    name: Pytester
+    name: Pytester iTests
     uses: ./.github/workflows/tests-onprem-pytester.yml
     permissions:
       contents: read
 
   ordinary-itests:
-    name: Ordinary
+    name: Ordinary iTests
     # runs the integration tests without `pytester`
     uses: ./.github/workflows/tests-onprem-ordinary.yml
     permissions:

@@ -1,4 +1,4 @@
-name: Ordinary iTests OnPrem
+name: OnPrem # iTests with Pytester
 
 on:
   workflow_call:
