@@ -1,22 +1,33 @@
-name: Slow Checks
+name: SaaS Tests
 
 on:
-  workflow_call:
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   build-matrix:
     name: Build Matrix
     uses: ./.github/workflows/matrix.yml
     with:
-      matrix_keys_json: '["python_versions", "exasol_versions"]'
+      matrix_keys_json: '["minimum_python_version"]'
     permissions:
       contents: read
 
-  # See https://github.com/exasol/pytest-slc/issues/38
-  run-integration-tests:
-    name: Integration Tests On Prem (Python-${{ matrix.python_versions }}, Exasol-${{ matrix.exasol_versions}})
+  approve-run-saas-tests:
+    name: Approve Running SaaS SLC Tests?
+    runs-on: "ubuntu-24.04"
+    permissions:
+      contents: read
+    environment: manual-approval
+    steps:
+      - name: Tests
+        run: echo "SaaS SLC tests approved"
+
+  run-saas-tests:
+    name: Integration Tests (Python-${{ matrix.minimum_python_version }})
     needs:
       - build-matrix
+      - approve-run-saas-tests
     runs-on: "ubuntu-24.04"
     permissions:
       contents: read
@@ -36,26 +47,27 @@ jobs:
         id: set-up-python-and-poetry-environment
         uses: exasol/python-toolbox/.github/actions/python-environment@v10
         with:
-          python-version: ${{ matrix.python_versions }}
+          python-version: ${{ matrix.minimum_python_version }}
           poetry-version: "2.3.0"
 
       - name: Allow unprivileged user namespaces
         id: allow-unprivileged-user-namespaces
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
-      - name: Run Integration Tests
-        id: run-integration-tests
+      - name: Run SaaS SLC Tests
+        id: run-saas-tests
         run: >
           poetry run -- nox -s test:integration -- --coverage
-          --db-version "${MATRIX_EXASOL_VERSION}"
-          -k "test_plugin_slc_onprem or test_plugin_skip_slc_option"
+          -k test_plugin_slc_saas
         env:
-          MATRIX_EXASOL_VERSION: ${{ matrix.exasol_versions }}
+          SAAS_HOST: ${{ secrets.INTEGRATION_TEAM_SAAS_STAGING_HOST }}
+          SAAS_ACCOUNT_ID: ${{ secrets.INTEGRATION_TEAM_SAAS_STAGING_ACCOUNT_ID }}
+          SAAS_PAT: ${{ secrets.INTEGRATION_TEAM_SAAS_STAGING_PAT }}
 
       - name: Upload Artifacts
         id: upload-artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: coverage-python${{ matrix.python_versions }}-exasol${{ matrix.exasol_versions }}-slow
+          name: coverage-python${{ matrix.minimum_python_version }}-saas-slc
           path: .coverage
           include-hidden-files: true

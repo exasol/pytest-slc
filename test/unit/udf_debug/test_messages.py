@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 import tenacity
 
-from exasol.pytest_slc.udf_debug.messages import wait_for_messages
+from exasol.pytest_slc.udf_debug import wait_for_messages
 
 TIMEOUT = timedelta(seconds=0.02)
 

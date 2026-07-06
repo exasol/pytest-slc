@@ -20,7 +20,7 @@ dependencies = [
     "pytest>=9,<10",
     "pytest-exasol-backend>=1.1, <2",
     "pytest-exasol-extension>=0.2.4, <2",
-    "exasol-python-extension-common>=0.9.0, <1.0.0",
+    "exasol-python-extension-common[slc-tool] (>=0.16.0, <1.0.0)",
     "exasol-saas-api>=2.8,<3",
 ]
 
