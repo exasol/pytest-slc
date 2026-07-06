@@ -9,11 +9,11 @@ jobs:
     name: Pytester
     uses: ./.github/workflows/tests-onprem-pytester.yml
     permissions:
-      read
+      contents: read
 
   ordinary-itests:
     name: Ordinary
     # runs the integration tests without `pytester`
     uses: ./.github/workflows/tests-onprem-ordinary.yml
     permissions:
-      read
+      contents: read
