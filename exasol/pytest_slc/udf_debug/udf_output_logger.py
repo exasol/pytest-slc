@@ -18,10 +18,11 @@ SERVER_START_TIMEOUT = timedelta(seconds=30)
 
 
 def retrieve_script_output_address(query_func: QueryFunc) -> str:
-    return query_func(
+    rows = query_func(
         "SELECT SESSION_VALUE FROM EXA_PARAMETERS "
         "WHERE PARAMETER_NAME='SCRIPT_OUTPUT_ADDRESS'"
-    ).fetchone()[0]
+    ).fetchone()
+    return rows[0] if rows else ""
 
 
 def alter_session_sql(address: str | IpAddress) -> str:
