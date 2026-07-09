@@ -4,7 +4,7 @@
 
 ## Bugfixes
 
-* #41: Added resetting `SCRIPT_OUTPUT_ADDRESS` on context `__exit__`
+* #41: Ensured to reset `SCRIPT_OUTPUT_ADDRESS` on context `__exit__` of `UdfOutputLogger`
 
 ## Dependency Updates
 
