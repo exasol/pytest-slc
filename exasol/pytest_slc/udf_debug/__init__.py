@@ -6,6 +6,7 @@ from exasol.pytest_slc.udf_debug.messages import (
 from exasol.pytest_slc.udf_debug.udf_output_logger import (
     UdfOutputLogger,
     alter_session_sql,
+    retrieve_script_output_address,
 )
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     "LogPipe",
     "UdfOutputLogger",
     "alter_session_sql",
+    "retrieve_script_output_address",
     "wait_for_messages",
 ]
