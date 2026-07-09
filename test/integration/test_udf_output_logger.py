@@ -6,6 +6,7 @@ import pytest
 from exasol.pytest_slc.udf_debug import (
     LogPipe,
     UdfOutputLogger,
+    retrieve_script_output_address,
     wait_for_messages,
 )
 
@@ -28,8 +29,10 @@ def test_udf_output_logger(db_schema, pyexasol_connection):
             print("Hello from UDF", flush=True)
         /
     """)
+    former_script_output_address = retrieve_script_output_address(query)
     query(sql)
     pipe = LogPipe()
     with UdfOutputLogger(query, print_func=pipe.input):
         query("SELECT print_something() FROM DUAL")
         wait_for_messages(pipe.output, "Hello from UDF")
+    assert retrieve_script_output_address(query) == former_script_output_address

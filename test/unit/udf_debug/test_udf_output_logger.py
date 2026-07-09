@@ -15,29 +15,28 @@ from exasol.pytest_slc.udf_debug import (
 )
 
 
+def alter_session_statement_pattern(address_regexp: str) -> re.Pattern:
+    sql = alter_session_sql(address_regexp)
+    regexp = sql.replace(" ", " +").replace("=", " *= *")
+    return re.compile(regexp)
+
+
 @dataclass
 class IpParser:
     ip: IpAddress | None = None
-    _pattern: re.Pattern | None = None
+    _pattern = alter_session_statement_pattern("(.*):([0-9]+)")
 
-    def _match(self, statement: str) -> re.Match:
-        if not self._pattern:
-            sql = alter_session_sql("(.*):([0-9]+)")
-            pattern = sql.replace(" ", " +").replace("=", " *= *")
-            self._pattern = re.compile(pattern)
-        return self._pattern.match(statement)
-
-    def _parse_script_output_address(self, statement: str) -> IpAddress:
-        if m := self._match(statement):
+    def _parse_script_output_address(self, statement: str) -> IpAddress | None:
+        if m := self._pattern.match(statement):
             host = m.group(1)
             port = int(m.group(2))
             return IpAddress(host, port)
-        raise RuntimeError(f'Couldn\'t parse ip-address from statement "{statement}"')
+        return None
 
     def query(self, query: str) -> pyexasol.ExaStatement:
         if self.ip is None:
             self.ip = self._parse_script_output_address(query)
-        return Mock()
+        return Mock(fetchone = Mock(return_value=[""]))
 
 
 @contextlib.contextmanager

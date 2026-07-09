@@ -17,6 +17,13 @@ DEFAULT_PORT = 3000
 SERVER_START_TIMEOUT = timedelta(seconds=30)
 
 
+def retrieve_script_output_address(query_func: QueryFunc) -> str:
+    return query_func(
+        "SELECT SESSION_VALUE FROM EXA_PARAMETERS "
+        "WHERE PARAMETER_NAME='SCRIPT_OUTPUT_ADDRESS'"
+    ).fetchone()[0]
+
+
 def alter_session_sql(address: str | IpAddress) -> str:
     return f"ALTER SESSION SET SCRIPT_OUTPUT_ADDRESS='{address}'"
 
@@ -45,11 +52,19 @@ class UdfOutputLogger:
         host: str | None = None,
         print_func: PrintFunc = print,
     ):
+        self._former_ip_address = ""
         self.ip_address = IpAddress.create(host, DEFAULT_PORT)
         self._query = query
         self._print = print_func
         self._log_server: LogServerProcess | None = None
         self._consumer: Consumer | None = None
+
+    def _alter_script_output_adress(self) -> None:
+        self._former_ip_address = retrieve_script_output_address(self._query)
+        self._query(alter_session_sql(self.ip_address))
+
+    def _reset_script_output_adress(self) -> None:
+        self._query(alter_session_sql(self._former_ip_address))
 
     def activate(self) -> None:
         """
@@ -68,7 +83,7 @@ class UdfOutputLogger:
             self.disable()
             raise UdfDebugException(f"LogServerProcess not ready after {timeout}")
         try:
-            self._query(alter_session_sql(self.ip_address))
+            self._alter_script_output_adress()
         except:
             self.disable()
             raise
@@ -79,6 +94,7 @@ class UdfOutputLogger:
         """
 
         if self._log_server:
+            self._reset_script_output_adress()
             self._log_server.shutdown()
             self._log_server.join(timeout=10)
             self._log_server = None
