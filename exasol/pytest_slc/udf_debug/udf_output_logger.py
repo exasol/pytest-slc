@@ -53,7 +53,7 @@ class UdfOutputLogger:
         host: str | None = None,
         print_func: PrintFunc = print,
     ):
-        self._former_ip_address = ""
+        self._former_ip_address: str | None = None
         self.ip_address = IpAddress.create(host, DEFAULT_PORT)
         self._query = query
         self._print = print_func
@@ -65,7 +65,8 @@ class UdfOutputLogger:
         self._query(alter_session_sql(self.ip_address))
 
     def _reset_script_output_adress(self) -> None:
-        self._query(alter_session_sql(self._former_ip_address))
+        if self._former_ip_address is not None:
+            self._query(alter_session_sql(self._former_ip_address))
 
     def activate(self) -> None:
         """
