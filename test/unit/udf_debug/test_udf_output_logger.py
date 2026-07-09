@@ -36,7 +36,7 @@ class IpParser:
     def query(self, query: str) -> pyexasol.ExaStatement:
         if self.ip is None:
             self.ip = self._parse_script_output_address(query)
-        return Mock(fetchone = Mock(return_value=[""]))
+        return Mock(fetchone=Mock(return_value=[""]))
 
 
 @contextlib.contextmanager
