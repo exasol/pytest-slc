@@ -22,7 +22,7 @@ def retrieve_script_output_address(query_func: QueryFunc) -> str:
         "SELECT SESSION_VALUE FROM EXA_PARAMETERS "
         "WHERE PARAMETER_NAME='SCRIPT_OUTPUT_ADDRESS'"
     ).fetchone()
-    return str(row[0]) or "" if row else ""
+    return str(row[0]) if row and row[0] else ""
 
 
 def alter_session_sql(address: str | IpAddress) -> str:

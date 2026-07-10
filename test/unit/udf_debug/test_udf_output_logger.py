@@ -5,12 +5,14 @@ from dataclasses import dataclass
 from unittest.mock import Mock
 
 import pyexasol
+import pytest
 
 from exasol.pytest_slc.udf_debug import (
     IpAddress,
     LogPipe,
     UdfOutputLogger,
     alter_session_sql,
+    retrieve_script_output_address,
     wait_for_messages,
 )
 
@@ -59,3 +61,16 @@ def test_udf_output_logger(client_address) -> None:
             for m in messages:
                 socket.sendall(m.encode() + b"\n")
         wait_for_messages(pipe.output, *messages)
+
+
+@pytest.mark.parametrize("query_result, expected", [
+    pytest.param(None, "", id="no_rows"),
+    pytest.param([None], "", id="single_column_with_None_value"),
+    pytest.param([None, 1], "", id="2-columns"),
+    pytest.param(["", 1], "", id="empty_string"),
+    pytest.param(["http://localhost:123", 1], "http://localhost:123", id="string"),
+    pytest.param([123, 1], "123", id="number"),
+])
+def test_retrieve_script_output_address(query_result, expected) -> None:
+    query_func = Mock(return_value=Mock(fetchone=Mock(return_value=query_result)))
+    assert retrieve_script_output_address(query_func) == expected
