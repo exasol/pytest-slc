@@ -100,7 +100,10 @@ class UdfOutputLogger:
             for func, message in (
                 (self._reset_script_output_address, "reset Script Output Address"),
                 (self._log_server.shutdown, "shut down the Log Server"),
-                (lambda: self._log_server.join(timeout=10), "join the Log Server Process"),
+                (
+                    lambda: self._log_server.join(timeout=10),
+                    "join the Log Server Process",
+                ),
             ):
                 try:
                     func()
