@@ -107,8 +107,7 @@ class UdfOutputLogger:
             ):
                 try:
                     func()
-                except Exception:  # NOSONAR
-                    # Cleanup should not raise exceptions.
+                except Exception:
                     LOG.error("Failed to %s", message)
             self._log_server = None
         if self._consumer:
@@ -118,8 +117,7 @@ class UdfOutputLogger:
             ):
                 try:
                     func()
-                except Exception:  # NOSONAR
-                    # Cleanup should not raise exceptions.
+                except Exception:
                     LOG.error("Failed to %s", message)
 
     def __enter__(self):
