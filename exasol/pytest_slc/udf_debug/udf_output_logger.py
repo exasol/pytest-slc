@@ -20,10 +20,11 @@ LOG = logging.getLogger(__name__)
 
 
 def retrieve_script_output_address(query_func: QueryFunc) -> str:
-    row = query_func(
+    rows = query_func(
         "SELECT SESSION_VALUE FROM EXA_PARAMETERS "
         "WHERE PARAMETER_NAME='SCRIPT_OUTPUT_ADDRESS'"
-    ).fetchone()
+    )
+    row = rows and rows[0]
     return str(row[0]) if row and row[0] else ""
 
 
