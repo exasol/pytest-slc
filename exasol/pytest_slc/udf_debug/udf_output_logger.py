@@ -2,6 +2,7 @@
 Support for capturing the output of UDFs.
 """
 
+import logging
 import multiprocessing as mp
 from datetime import timedelta
 
@@ -15,6 +16,7 @@ from exasol.pytest_slc.udf_debug.types import (
 
 DEFAULT_PORT = 3000
 SERVER_START_TIMEOUT = timedelta(seconds=30)
+LOG = logging.getLogger(__name__)
 
 
 def retrieve_script_output_address(query_func: QueryFunc) -> str:
