@@ -46,7 +46,7 @@ jobs:
         id: run-tests
         run: >
           poetry run -- nox -s test:integration -- --coverage
-          --backend onprem
+          -rA --setup-show --backend onprem
           --itde-db-version "${MATRIX_EXASOL_VERSION}"
           -m "not pytester"
         env:
