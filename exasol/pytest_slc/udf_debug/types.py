@@ -1,9 +1,9 @@
 from collections.abc import Callable
 from typing import (
+    Any,
     TypeAlias,
 )
 
-import pyexasol
-
 PrintFunc: TypeAlias = Callable[[str], None]
-QueryFunc: TypeAlias = Callable[[str], pyexasol.ExaStatement]
+QueryResult: TypeAlias = list[tuple[Any, ...]]
+QueryFunc: TypeAlias = Callable[[str], QueryResult]
