@@ -1,4 +1,3 @@
-import contextlib
 import re
 import socket as socketlib
 from dataclasses import dataclass
@@ -41,13 +40,6 @@ class IpParser:
         return []
 
 
-@contextlib.contextmanager
-def open_socket(ip: IpAddress):
-    with socketlib.socket() as socket:
-        socket.connect(ip.as_tuple)
-        yield socket
-
-
 def test_udf_output_logger(client_address) -> None:
     messages = [
         "message one",
@@ -57,9 +49,8 @@ def test_udf_output_logger(client_address) -> None:
     pipe = LogPipe()
     ip_parser = IpParser()
     with UdfOutputLogger(ip_parser.query, print_func=pipe.input):
-        with open_socket(ip_parser.ip) as socket:
-            for m in messages:
-                socket.sendall(m.encode() + b"\n")
+        for m in messages:
+            pipe.input(m)
         wait_for_messages(pipe.output, *messages)
 
 
