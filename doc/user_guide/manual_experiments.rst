@@ -6,10 +6,10 @@ Manual Experiments with an SLC
 .. _pytext_pyexasol_con:
    https://github.com/exasol/pytest-extension/blob/main/exasol/pytest_extension/__init__.py#L56
 
-For manual Experiments with an SLC we recommend simply using the fixtures from
+For manual experiments with an SLC we recommend simply using the fixtures from
 this pytest plugin ``pytest-exasol-slc`` for deploying and activating the SLC.
 
-For this usage scenario
+For this usage scenario:
 
 * Start a Docker DB manually and tell pytest plugin ``pytest-exasol-backend``
   to use it, see `PYTBE README <pytbe_readme_>`_.
