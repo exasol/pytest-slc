@@ -11,7 +11,7 @@ UDF Output Logger
 The Pytest SLC Plugin helps accessing and analyzing the output of UDFs (User
 Defined Functions), see `docs.exasol.com <script_output_>`_.
 
-Since UDFs cannot print to your console, you only can retrieve messages from
+Since UDFs cannot print to your console, you can only retrieve messages from
 UDFs via network transfer, e.g. using *sockets*. PYTSLC class
 ``UdfOutputLogger`` can redirect output from UDFs to your local console or
 wait for specific messages.

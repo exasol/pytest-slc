@@ -2,7 +2,7 @@
 
 ## Summary
 
-This release adds a meaningful exception message when `wait_for_messages()` and convenience function `pyexasol_query_func()` and updates the user guide to describe class `UdfOutputLogger` and these functions.
+This release adds a meaningful exception message for `wait_for_messages()`, a new convenience function `pyexasol_query_func()` and updates the user guide to describe class `UdfOutputLogger` and these functions.
 
 ## Features
 
