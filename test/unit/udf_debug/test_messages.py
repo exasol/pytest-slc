@@ -44,7 +44,10 @@ def reading(tmp_path, request):
 def test_failure(reading, sample_lines):
     expected_messages = ["line 1", "line 99"]
     with reading(sample_lines) as reader:
-        with pytest.raises(TimeoutError) as ex:
+        with pytest.raises(
+            TimeoutError,
+            match="Did not find expected messages \['line 99'\]",
+        ):
             wait_for_messages(reader, *expected_messages, timeout=TIMEOUT)
 
 
