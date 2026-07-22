@@ -6,6 +6,7 @@ from exasol.pytest_slc.udf_debug import (
     LogPipe,
     QueryResult,
     UdfOutputLogger,
+    pyexasol_query_func,
     retrieve_script_output_address,
     wait_for_messages,
 )
@@ -16,11 +17,12 @@ def db_schema():
     return "ITEST_PYTSLC"
 
 
-def test_udf_output_logger(db_schema, pyexasol_connection):
-    def query(sql: str) -> QueryResult:
-        stmt = pyexasol_connection.execute(sql)
-        return [] if stmt.rowcount() == 0 else stmt.fetchall()
+@pytest.fixture
+def query_func(pyexasol_connection) -> QueryFunc:
+    return pyexasol_query_func(pyexasol_connection)
 
+
+def test_udf_output_logger(db_schema, query_func):
     sql = cleandoc("""
         CREATE OR REPLACE python3 SCALAR SCRIPT
         print_something()
@@ -30,6 +32,7 @@ def test_udf_output_logger(db_schema, pyexasol_connection):
             print("Hello from UDF", flush=True)
         /
     """)
+    query = query_func
     former_script_output_address = retrieve_script_output_address(query)
     query(sql)
     pipe = LogPipe()
