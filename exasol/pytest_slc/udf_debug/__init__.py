@@ -1,8 +1,9 @@
 from exasol.pytest_slc.udf_debug.ip_address import IpAddress
-from exasol.pytest_slc.udf_debug.messages import (
+from exasol.pytest_slc.udf_debug.util import (
     LogPipe,
-    wait_for_messages,
+    pyexasol_query_func,
 )
+from exasol.pytest_slc.udf_debug.messages import wait_for_messages
 from exasol.pytest_slc.udf_debug.types import QueryResult
 from exasol.pytest_slc.udf_debug.udf_output_logger import (
     UdfOutputLogger,

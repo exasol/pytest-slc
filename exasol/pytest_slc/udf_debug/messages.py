@@ -1,5 +1,4 @@
 import logging
-import multiprocessing
 from collections.abc import Callable
 from datetime import timedelta
 from typing import TypeAlias
@@ -12,23 +11,6 @@ from tenacity.stop import stop_after_delay
 
 ReadFunc: TypeAlias = Callable[[], str]
 LOG = logging.getLogger(__name__)
-
-
-class LogPipe:
-    """
-    Small wrapper around ``multiprocessing.Pipe`` to be used with
-    ``UdfOutputLogger`` and ``wait_for_messages()``.
-    """
-
-    def __init__(self):
-        self._conn1, self._conn2 = multiprocessing.Pipe()
-
-    def input(self, data: str) -> None:
-        self._conn1.send(data)
-
-    def output(self) -> str:
-        con = self._conn2
-        return con.recv() if con.poll(timeout=1) else ""
 
 
 def wait_for_messages(
