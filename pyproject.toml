@@ -22,6 +22,7 @@ dependencies = [
     "pytest-exasol-extension>=0.2.4, <2",
     "exasol-python-extension-common[slc-tool] (>=0.16.0, <1.0.0)",
     "exasol-saas-api>=2.8,<3",
+    "pyexasol (>=2.3.0,<3.0.0)",
 ]
 
 [project.entry-points.pytest11]
