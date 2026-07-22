@@ -4,6 +4,7 @@ import pytest
 
 from exasol.pytest_slc.udf_debug import (
     LogPipe,
+    QueryFunc,
     UdfOutputLogger,
     pyexasol_query_func,
     retrieve_script_output_address,
