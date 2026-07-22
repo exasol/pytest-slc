@@ -1,5 +1,4 @@
 import re
-import socket as socketlib
 from dataclasses import dataclass
 from unittest.mock import Mock
 
