@@ -1,11 +1,6 @@
-.. _user_guide:
-
-:octicon:`person` User Guide
-============================
-
-
 UDF Output Logger
------------------
+=================
+
 .. _script_output: https://docs.exasol.com/db/latest/database_concepts/udf_scripts/debug_udf_script_output.htm
 
 The Pytest SLC Plugin helps accessing and analyzing the output of UDFs (User

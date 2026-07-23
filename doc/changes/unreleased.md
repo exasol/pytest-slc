@@ -15,6 +15,7 @@ This release adds a meaningful exception message for `wait_for_messages()`, a ne
 ## Documentation
 
 * #46: Described `UdfOutputLogger` and `wait_for_messages()` in the user guide
+* #27: Described deploying and activating an SLC via Integration tests in the User guide
 
 ## Refactorings
 
