@@ -223,9 +223,11 @@ def activate_script_languages(
         pyexasol_connection_, LanguageActivationLevel.Session
     )
     set_script_languages(pyexasol_connection_, script_languages_)
-    yield
-    # reset script languages
-    set_script_languages(pyexasol_connection_, current_script_languages)
+    try:
+        yield
+    finally:
+        # reset script languages
+        set_script_languages(pyexasol_connection_, current_script_languages)
 
 
 @pytest.fixture(scope="session")
