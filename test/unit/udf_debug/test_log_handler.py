@@ -11,7 +11,7 @@ from exasol.pytest_slc.udf_debug.ip_address import IpAddress
 
 
 def log_handler(
-    data: str,
+    data: list[str],
     client_address: IpAddress,
     server: Mock = Mock(),
     append_newline: bool = True,

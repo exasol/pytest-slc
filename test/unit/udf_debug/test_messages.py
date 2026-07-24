@@ -4,7 +4,6 @@ from datetime import timedelta
 from pathlib import Path
 
 import pytest
-import tenacity
 
 from exasol.pytest_slc.udf_debug import wait_for_messages
 
@@ -44,12 +43,15 @@ def reading(tmp_path, request):
 def test_failure(reading, sample_lines):
     expected_messages = ["line 1", "line 99"]
     with reading(sample_lines) as reader:
-        with pytest.raises(tenacity.RetryError):
+        with pytest.raises(
+            TimeoutError,
+            match=r"Did not find expected messages \['line 99'\]",
+        ):
             wait_for_messages(reader, *expected_messages, timeout=TIMEOUT)
 
 
 def test_success(reading, sample_lines):
     expected_messages = ["line 1", "line 3"]
     with reading(sample_lines) as reader:
-        with not_raises(tenacity.RetryError):
+        with not_raises(TimeoutError):
             wait_for_messages(reader, *expected_messages, timeout=TIMEOUT)

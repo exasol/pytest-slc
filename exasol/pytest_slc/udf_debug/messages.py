@@ -1,34 +1,13 @@
 import logging
-import multiprocessing
 from collections.abc import Callable
 from datetime import timedelta
 from typing import TypeAlias
 
-from tenacity import (
-    Retrying,
-    TryAgain,
-)
+from tenacity import Retrying
 from tenacity.stop import stop_after_delay
 
 ReadFunc: TypeAlias = Callable[[], str]
 LOG = logging.getLogger(__name__)
-
-
-class LogPipe:
-    """
-    Small wrapper around ``multiprocessing.Pipe`` to be used with
-    ``UdfOutputLogger`` and ``wait_for_messages()``.
-    """
-
-    def __init__(self):
-        self._conn1, self._conn2 = multiprocessing.Pipe()
-
-    def input(self, data: str) -> None:
-        self._conn1.send(data)
-
-    def output(self) -> str:
-        con = self._conn2
-        return con.recv() if con.poll(timeout=1) else ""
 
 
 def wait_for_messages(
@@ -55,14 +34,11 @@ def wait_for_messages(
     """
 
     messages = list(expected_messages)
-    for attempt in Retrying(stop=stop_after_delay(timeout)):
+    for attempt in Retrying(stop=stop_after_delay(timeout), reraise=True):
         with attempt:
             line = read_line()
             LOG.debug('Read line "%s".', line.strip())
             # skip messages already found
             messages = [m for m in messages if m not in line]
             if messages:
-                raise TryAgain()
-
-    if messages:
-        raise TimeoutError(f"Did not find expected messages {list(messages)}.")
+                raise TimeoutError(f"Did not find expected messages {list(messages)}.")
