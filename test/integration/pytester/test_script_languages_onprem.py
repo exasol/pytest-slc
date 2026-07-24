@@ -9,6 +9,18 @@ from exasol.pytest_slc import SCRIPT_LANGUAGES_OPTION
 pytest_plugins = ["pytester"]
 
 
+def test_no_option_for_script_languages_raises_wrapper(pytester):
+    pytester.makepyfile("""
+import pytest
+
+def test_no_option_for_script_languages_raises(script_languages):
+    assert True
+""")
+    result = pytester.runpytest(BACKEND_OPTION, BACKEND_ONPREM)
+    assert result.ret == pytest.ExitCode.TESTS_FAILED
+    result.assert_outcomes(errors=1)
+
+
 def test_empty_value_for_script_languages_raises_wrapper(pytester):
     pytester.makepyfile("""
 import pytest
