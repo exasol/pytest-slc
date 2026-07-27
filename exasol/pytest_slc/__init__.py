@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 import exasol.bucketfs as bfs
-import pyexasol
 import pytest
 from _pytest.fixtures import FixtureRequest
 from exasol.pytest_backend import paralleltask
@@ -232,7 +231,7 @@ def activate_script_languages(
 
 @pytest.fixture(scope="session")
 def activate_script_languages_for_session(
-    script_languages, pyexasol_connection: pyexasol.ExaConnection
+    script_languages, pyexasol_connection: ExaConnection
 ):
     with activate_script_languages(pyexasol_connection, script_languages):
         yield
@@ -240,7 +239,7 @@ def activate_script_languages_for_session(
 
 @pytest.fixture(scope="module")
 def activate_script_languages_for_module(
-    script_languages, pyexasol_connection: pyexasol.ExaConnection
+    script_languages, pyexasol_connection: ExaConnection
 ):
     with activate_script_languages(pyexasol_connection, script_languages):
         yield
@@ -248,7 +247,7 @@ def activate_script_languages_for_module(
 
 @pytest.fixture(scope="function")
 def activate_script_languages_for_function(
-    script_languages, pyexasol_connection: pyexasol.ExaConnection
+    script_languages, pyexasol_connection: ExaConnection
 ):
     with activate_script_languages(pyexasol_connection, script_languages):
         yield
