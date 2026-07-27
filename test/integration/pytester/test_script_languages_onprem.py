@@ -9,6 +9,7 @@ from exasol.pytest_slc import SCRIPT_LANGUAGES_OPTION
 pytest_plugins = ["pytester"]
 
 
+@pytest.mark.pytester
 def test_no_option_for_script_languages_raises_wrapper(pytester):
     pytester.makepyfile("""
 import pytest
@@ -21,6 +22,7 @@ def test_no_option_for_script_languages_raises(script_languages):
     result.assert_outcomes(errors=1)
 
 
+@pytest.mark.pytester
 def test_empty_value_for_script_languages_raises_wrapper(pytester):
     pytester.makepyfile("""
 import pytest
@@ -35,6 +37,7 @@ def test_empty_value_for_script_languages_raises(script_languages):
     result.assert_outcomes(errors=1)
 
 
+@pytest.mark.pytester
 @pytest.mark.parametrize(
     "fixture_under_test",
     [
@@ -69,6 +72,7 @@ def test_setting_script_languages_wrapper(pytester, fixture_under_test):
     result.assert_outcomes(passed=1, skipped=1)
 
 
+@pytest.mark.pytester
 def test_script_languages_for_function_is_reset_wrapper(pytester):
     expected_script_languages = r"PYTHON3=PYTEST_SCL_INTEGRATION_TEST"
     pytester.makepyfile(f"""
@@ -104,6 +108,7 @@ def test_script_languages_for_function_is_reset_wrapper(pytester):
     result.assert_outcomes(passed=2, skipped=2)
 
 
+@pytest.mark.pytester
 def test_script_languages_for_module_is_reset_wrapper(pytester):
     expected_script_languages = r"PYTHON3=PYTEST_SCL_INTEGRATION_TEST"
     pytester.makepyfile(test_module1=f"""
@@ -147,6 +152,7 @@ def test_script_languages_for_module_is_reset_wrapper(pytester):
     result.assert_outcomes(passed=2, skipped=2)
 
 
+@pytest.mark.pytester
 @pytest.mark.parametrize(
     "fixture_under_test",
     [
