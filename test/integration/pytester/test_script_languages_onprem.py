@@ -191,3 +191,22 @@ def test_script_languages_is_not_reset_wrapper(pytester, fixture_under_test):
     # testing against SaaS API is skipped
     assert result.ret == pytest.ExitCode.OK
     result.assert_outcomes(passed=2, skipped=2)
+
+
+@pytest.mark.pytester
+def test_if_script_languages_export_slc_is_none_wrapper(pytester):
+    expected_script_languages = r"PYTHON3=PYTEST_SCL_INTEGRATION_TEST"
+    pytester.makepyfile("""
+import pytest
+
+def test_if_script_languages_export_slc_is_none(export_slc, script_languages):
+    assert export_slc is None
+""")
+    result = pytester.runpytest(
+        BACKEND_OPTION,
+        BACKEND_ONPREM,
+        SCRIPT_LANGUAGES_OPTION,
+        expected_script_languages,
+    )
+    assert result.ret == pytest.ExitCode.OK
+    result.assert_outcomes(passed=1)
