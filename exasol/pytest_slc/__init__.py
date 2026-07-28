@@ -77,13 +77,6 @@ def export_slc_async(
     """
 
     """
-    The operation will be skipped if SCRIPT_LANGUAGES_OPTION is defined.
-    """
-    if request.config.getoption(SCRIPT_LANGUAGES_OPTION):
-        yield None
-        return
-
-    """
     The operation will be skipped if none of the backends is in use or the
     container builder is not defined or the SLC deployment is skipped.
     """
@@ -106,11 +99,16 @@ def export_slc_async(
 
 
 @pytest.fixture(scope="session")
-def export_slc(slc_builder, export_slc_async) -> Path | None:
+def export_slc(slc_builder, export_slc_async, request) -> Path | None:
     """
     The fixture waits for the LanguageContainerBuilder.export() function to finish.
     It returns the path of the exported container.
     """
+
+    # SCRIPT_LANGUAGES_OPTION is defined, SLC deployment not needed
+    if request.config.getoption(SCRIPT_LANGUAGES_OPTION):
+        return None
+
     if (slc_builder is None) or (export_slc_async is None):
         # Perhaps none of the backends is enabled, or we don't need the SLC deployment.
         return None
