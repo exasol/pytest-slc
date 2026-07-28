@@ -6,8 +6,6 @@ from exasol.pytest_backend import (
 
 from exasol.pytest_slc import SCRIPT_LANGUAGES_OPTION
 
-pytest_plugins = ["pytester"]
-
 
 @pytest.mark.pytester
 def test_no_option_for_script_languages_raises_wrapper(pytester):

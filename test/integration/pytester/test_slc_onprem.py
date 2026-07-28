@@ -6,8 +6,6 @@ from exasol.pytest_backend import (
     BACKEND_OPTION,
 )
 
-pytest_plugins = ["pytester"]
-
 
 @pytest.mark.pytester
 def test_plugin_slc_onprem(pytester):
