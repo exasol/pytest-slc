@@ -20,3 +20,4 @@ This release adds a meaningful exception message for `wait_for_messages()`, a ne
 ## Refactorings
 
 * #43: Replaced CLI option `--db-version` by `--itde-db-version`
+*  #4: Added support for Python 3.14
