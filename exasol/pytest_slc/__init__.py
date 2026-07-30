@@ -10,7 +10,7 @@ from typing import Any
 import exasol.bucketfs as bfs
 import pytest
 from _pytest.fixtures import FixtureRequest
-from exasol.pytest_backend.parallel_task import paralleltask
+from exasol.pytest_backend import paralleltask
 from exasol.python_extension_common.deployment.language_container_builder import (
     LanguageContainerBuilder,
 )
