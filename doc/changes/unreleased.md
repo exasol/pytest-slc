@@ -7,7 +7,8 @@ This release adds a meaningful exception message for `wait_for_messages()`, a ne
 ## Features
 
 * #47: Added convenience function `pyexasol_query_func()`
-
+* #25: Added commandline option --script-languages
+* 
 ## Bugfixes
 
 * #45: Added exception message in case of expected message not found in `wait_for_messages()`

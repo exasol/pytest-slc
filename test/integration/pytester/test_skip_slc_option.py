@@ -8,8 +8,6 @@ from exasol.pytest_backend import (
 
 from exasol.pytest_slc import SKIP_SLC_OPTION
 
-pytest_plugins = ["pytester"]
-
 _TEST_CODE_SKIP = dedent("""
     import pytest
     from exasol.python_extension_common.deployment.language_container_builder import (

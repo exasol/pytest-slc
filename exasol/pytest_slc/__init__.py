@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import contextlib
 import getpass
 from importlib.metadata import version
 from pathlib import Path
+from typing import Any
 
 import exasol.bucketfs as bfs
 import pytest
+from _pytest.fixtures import FixtureRequest
 from exasol.pytest_backend import paralleltask
 from exasol.python_extension_common.deployment.language_container_builder import (
     LanguageContainerBuilder,
@@ -13,6 +16,7 @@ from exasol.python_extension_common.deployment.language_container_builder import
 from exasol.python_extension_common.deployment.language_container_deployer import (
     LanguageActivationLevel,
     LanguageContainerDeployer,
+    get_language_settings,
 )
 from exasol.slc.models.export_container_result import (  # noqa: F401
     ExportContainerResult,
@@ -24,6 +28,9 @@ from exasol_integration_test_docker_environment.lib.models.api_errors import (
 
 __version__ = version("pytest-exasol-slc")
 
+from pyexasol import ExaConnection
+
+SCRIPT_LANGUAGES_OPTION = "--script-languages"
 SKIP_SLC_OPTION = "--skip-slc"
 BFS_CONTAINER_DIRECTORY = "container"
 
@@ -31,6 +38,11 @@ BFS_CONTAINER_DIRECTORY = "container"
 def pytest_addoption(parser):
     parser.addoption(
         SKIP_SLC_OPTION, action="store_true", default=False, help="Skip SLC deployment"
+    )
+    parser.addoption(
+        SCRIPT_LANGUAGES_OPTION,
+        default=None,
+        help="Script language definition",
     )
 
 
@@ -62,7 +74,14 @@ def export_slc_async(
     """
     The fixture starts the export() function of the provided
     LanguageContainerBuilder object as an asynchronous task.
+    """
 
+    # SCRIPT_LANGUAGES_OPTION is defined, SLC deployment not needed
+    if request.config.getoption(SCRIPT_LANGUAGES_OPTION):
+        yield None
+        return
+
+    """
     The operation will be skipped if none of the backends is in use or the
     container builder is not defined or the SLC deployment is skipped.
     """
@@ -90,6 +109,7 @@ def export_slc(slc_builder, export_slc_async) -> Path | None:
     The fixture waits for the LanguageContainerBuilder.export() function to finish.
     It returns the path of the exported container.
     """
+
     if (slc_builder is None) or (export_slc_async is None):
         # Perhaps none of the backends is enabled, or we don't need the SLC deployment.
         return None
@@ -173,3 +193,60 @@ def deployed_slc(deploy_slc, language_alias) -> str:
     """
     deploy_slc(language_alias)
     return language_alias
+
+
+def set_script_languages(
+    pyexasol_connection: ExaConnection, script_languages: Any | None
+):
+    query = "ALTER SESSION SET SCRIPT_LANGUAGES={script_languages}"
+    pyexasol_connection.execute(
+        query, query_params={"script_languages": script_languages}
+    )
+
+
+@pytest.fixture(scope="session")
+def script_languages(request: FixtureRequest) -> str:
+    script_languages = request.config.getoption(SCRIPT_LANGUAGES_OPTION)
+    if not script_languages or script_languages == "":
+        raise RuntimeError(f"Value for {SCRIPT_LANGUAGES_OPTION} missing")
+    return script_languages
+
+
+@contextlib.contextmanager
+def activate_script_languages(
+    pyexasol_connection: ExaConnection, script_languages_: str
+):
+    # get script languages currently used
+    current_script_languages = get_language_settings(
+        pyexasol_connection, LanguageActivationLevel.Session
+    )
+    set_script_languages(pyexasol_connection, script_languages_)
+    try:
+        yield
+    finally:
+        # reset script languages
+        set_script_languages(pyexasol_connection, current_script_languages)
+
+
+@pytest.fixture(scope="session")
+def activate_script_languages_for_session(
+    script_languages, pyexasol_connection: ExaConnection
+):
+    with activate_script_languages(pyexasol_connection, script_languages):
+        yield
+
+
+@pytest.fixture(scope="module")
+def activate_script_languages_for_module(
+    script_languages, pyexasol_connection: ExaConnection
+):
+    with activate_script_languages(pyexasol_connection, script_languages):
+        yield
+
+
+@pytest.fixture(scope="function")
+def activate_script_languages_for_function(
+    script_languages, pyexasol_connection: ExaConnection
+):
+    with activate_script_languages(pyexasol_connection, script_languages):
+        yield
