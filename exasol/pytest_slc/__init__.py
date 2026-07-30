@@ -104,7 +104,7 @@ def export_slc_async(
 
 
 @pytest.fixture(scope="session")
-def export_slc(slc_builder, export_slc_async, request) -> Path | None:
+def export_slc(slc_builder, export_slc_async) -> Path | None:
     """
     The fixture waits for the LanguageContainerBuilder.export() function to finish.
     It returns the path of the exported container.
