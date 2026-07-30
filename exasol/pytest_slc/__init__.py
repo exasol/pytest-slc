@@ -214,18 +214,18 @@ def script_languages(request: FixtureRequest) -> str:
 
 @contextlib.contextmanager
 def activate_script_languages(
-    pyexasol_connection_: ExaConnection, script_languages_: str
+    pyexasol_connection: ExaConnection, script_languages_: str
 ):
     # get script languages currently used
     current_script_languages = get_language_settings(
-        pyexasol_connection_, LanguageActivationLevel.Session
+        pyexasol_connection, LanguageActivationLevel.Session
     )
-    set_script_languages(pyexasol_connection_, script_languages_)
+    set_script_languages(pyexasol_connection, script_languages_)
     try:
         yield
     finally:
         # reset script languages
-        set_script_languages(pyexasol_connection_, current_script_languages)
+        set_script_languages(pyexasol_connection, current_script_languages)
 
 
 @pytest.fixture(scope="session")
