@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import getpass
+from collections.abc import Generator
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any
@@ -18,7 +19,7 @@ from exasol.python_extension_common.deployment.language_container_deployer impor
     LanguageContainerDeployer,
     get_language_settings,
 )
-from exasol.slc.models.export_container_result import (  # noqa: F401
+from exasol.slc.models.export_container_result import (
     ExportContainerResult,
 )
 from exasol_integration_test_docker_environment.lib.models.api_errors import (
@@ -35,7 +36,7 @@ SKIP_SLC_OPTION = "--skip-slc"
 BFS_CONTAINER_DIRECTORY = "container"
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         SKIP_SLC_OPTION, action="store_true", default=False, help="Skip SLC deployment"
     )
@@ -91,7 +92,7 @@ def export_slc_async(
         return
 
     @paralleltask
-    def export_runner():
+    def export_runner() -> Generator[ExportContainerResult, Any, None]:
         yield slc_builder.export()
 
     with export_runner() as export_task:
@@ -115,7 +116,7 @@ def export_slc(slc_builder, export_slc_async) -> Path | None:
         return None
 
     try:
-        export_result = export_slc_async.get_output()
+        export_result: ExportContainerResult = export_slc_async.get_output()
         export_info = export_result.export_infos[str(slc_builder.flavor_path)][
             "release"
         ]
@@ -197,7 +198,7 @@ def deployed_slc(deploy_slc, language_alias) -> str:
 
 def set_script_languages(
     pyexasol_connection: ExaConnection, script_languages: Any | None
-):
+) -> None:
     query = "ALTER SESSION SET SCRIPT_LANGUAGES={script_languages}"
     pyexasol_connection.execute(
         query, query_params={"script_languages": script_languages}
