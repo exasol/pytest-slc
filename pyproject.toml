@@ -1,6 +1,6 @@
 [project]
 name = "pytest-exasol-slc"
-version = "1.1.1"
+version = "1.2.0"
 description = ""
 authors = [{ name = "Mikhail Beck", email = "mikhail.beck@exasol.com" }]
 requires-python = ">=3.10,<3.15"
