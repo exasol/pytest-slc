@@ -26,7 +26,7 @@ slc = "exasol.pytest_slc"
 
 [dependency-groups]
 dev = [
-    "exasol-toolbox>=10.4.0,<11",
+    "exasol-toolbox>=12.0.0,<13",
     "exasol-bucketfs>=1.1.0",
 ]
 
