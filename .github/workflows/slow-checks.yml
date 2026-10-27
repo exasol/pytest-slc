@@ -7,13 +7,13 @@ jobs:
 
   pytester-tests:
     name: Pytester iTests
-    uses: ./.github/workflows/tests-onprem-pytester.yml
+    uses: $/.github/workflows/tests-onprem-pytester.yml
     permissions:
       contents: read
 
   ordinary-itests:
     name: Ordinary iTests
     # runs the integration tests without `pytester`
-    uses: ./.github/workflows/tests-onprem-ordinary.yml
+    uses: $/.github/workflows/tests-onprem-ordinary.yml
     permissions:
       contents: read

@@ -1,10 +1,10 @@
-from test.integration.pytester.util.itest_common import load_test_code
-
 import pytest
 from exasol.pytest_backend import (
     BACKEND_ONPREM,
     BACKEND_OPTION,
 )
+
+from test.integration.pytester.util.itest_common import load_test_code
 
 
 @pytest.mark.pytester

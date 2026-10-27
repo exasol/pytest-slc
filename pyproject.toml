@@ -3,11 +3,10 @@ name = "pytest-exasol-slc"
 version = "1.2.0"
 description = ""
 authors = [{ name = "Mikhail Beck", email = "mikhail.beck@exasol.com" }]
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 readme = "README.md"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -27,7 +26,7 @@ slc = "exasol.pytest_slc"
 
 [dependency-groups]
 dev = [
-    "exasol-toolbox>=10.4.0,<11",
+    "exasol-toolbox>=12.0.0,<13",
     "exasol-bucketfs>=1.1.0",
 ]
 
